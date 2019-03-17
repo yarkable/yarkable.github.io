@@ -1,10 +1,10 @@
 # Site settings
-title: One Blog
-SEOTitle: 一个博客 | One Blog
+title: One Blog|文鹃阁
+SEOTitle: One Blog|文鹃阁
 header-img: img/post-bg-desk.jpg
 email: yarkable@gmail.com
 description: "Plz go to study now !"
-keyword: "棒棒鸡不棒, One, one, One Blog, 凯, kevin, KevinYe"
+keyword: "棒棒鸡不棒, One, one, One Blog, 凯, kevin, KevinYe, 文鹃阁"
 url: "https://yarkable.github.io"          # your host, for absolute URL
 baseurl: ""      # for example, '/blog' if your blog hosted on 'host/blog'
 github_repo: "https://github.com/yarkable/yarkable.github.io.git" # you code repository

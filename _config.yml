@@ -1,6 +1,6 @@
 # Site settings
 title: One Blog
-SEOTitle: One Blog|文鹃阁
+SEOTitle: One Blog | 文鹃阁
 header-img: img/post-bg-desk.jpg
 email: yarkable@gmail.com
 description: "Plz go to study now !"
@@ -20,10 +20,10 @@ sidebar-avatar: /img/self-introduce.jpg      # use absolute URL, seeing it's use
 RSS: false
 weibo_username:     qiubaiying
 zhihu_username:     qiubaiying
-github_username:    qiubaiying
-facebook_username:  baiying.qiu.7
+github_username:    yarkable
+# facebook_username:  baiying.qiu.7
 jianshu_username:   e71990ada2fd
-twitter_username:   qiubaiying
+# twitter_username:   qiubaiying
 
 
 
@@ -62,8 +62,8 @@ kramdown:
 # Gitalk
 gitalk:
   enable: true    #是否开启Gitalk评论
-  clientID: f2c84e7629bb1446c1a4                            #生成的clientID
-  clientSecret: ca6d6139d1e1b8c43f8b2e19492ddcac8b322d0d    #生成的clientSecret
+  clientID: 34724aee4f9331859352                            #生成的clientID
+  clientSecret: eb79d9acd4dd21ee85de8fde1f1766a6108e8836    #生成的clientSecret
   repo: yarkable.github.io    #仓库名称
   owner: yarkable    #github用户名
   admin: yarkable
@@ -99,10 +99,10 @@ service-worker: true
 # Friends
 friends: [
     {
-        title: "WY",
+        title: "",
         href: "http://zhengwuyang.com"
     },{
-        title: "简书·BY",
-        href: "http://www.jianshu.com/u/e71990ada2fd"
+        title: "简书",
+        href: "https://www.jianshu.com/u/5e14129c4ad7"
     }
 ]

@@ -8,6 +8,7 @@ header-img: img/green-bg.jpg
 catalog: true
 tags:
     - MatLab
+    - linux
 ---
 
 之前在 Ubuntu 下经常要相机标定，所以下载了 MatLab，因为一个 license manger error 搞了我大半天才弄好，然后最近实验室的小伙伴也在 Ubuntu 装了个 MatLab，也是遇到了这个问题，两天都没装好，最后终于找到了解决方法，于是记录下来，以防下次重装还遇到这个错误。

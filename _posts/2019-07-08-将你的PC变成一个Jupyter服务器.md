@@ -30,17 +30,17 @@ tags:
  pip3 install jupyter-notebook
  ```
  
- 如果 python 发行版是 Anaconda 的话是自带 jupyter notebook 的，不需要安装。
+如果 python 发行版是 Anaconda 的话是自带 jupyter notebook 的，不需要安装。
  
- 安装完成之后在命令行输入以下命令就会新建一个服务器，同时本地的浏览器会打开 jupyter 界面
+安装完成之后在命令行输入以下命令就会新建一个服务器，同时本地的浏览器会打开 jupyter 界面
  
- ```bash
- $ jupyter-notebook
- ```
+```bash
+$ jupyter-notebook
+```
  
- 使用教程可以上网搜索，在此不过多讲述。
+使用教程可以上网搜索，在此不过多讲述。
  
- ## 配置
+## 配置
 
 ### 配置局域网访问
 

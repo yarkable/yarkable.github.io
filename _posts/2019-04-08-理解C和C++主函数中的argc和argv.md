@@ -8,7 +8,7 @@ header-img: img/green-bg.jpg
 catalog: true
 tags:
     - C Programming
-    - C++
+    - cpp
 ---
 
 以前学 C 语言的时候用过一段时间老版的 Visual Studio，里面的 main 函数是这样定义的
@@ -94,7 +94,6 @@ argv[4]: happy
 所以这两个参数其实就是拿来处理命令行参数用的，但是不一定要命名成 `argc` 和 `argv[]`，只要符合 C/C++ 命名规范就行，重要的是两个参数的类型，一个是 `int` 另一个是 `char **` 或 `char* []`。
 
 网上查资料时说一般在命令行处理文件配合 stream 流多用这两个参数，反正我目前基本没用过，网上也没有比较经典的例子，但是还是了解一下比较好。
-
 
 ---
 

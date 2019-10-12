@@ -83,7 +83,7 @@ $ ./setup.sh
 
 ![](https://ae01.alicdn.com/kf/Hd7b7352a04ce43f198c6d61fcabd804bs.png)
 
-同样的方法我在双系统的 ubuntu 中也试了一遍，也成功安装了 pwndbg，
+同样的方法我在双系统的 ubuntu 中也试了一遍，也成功安装了 pwndbg，等着大佬带着学习吧。
 
 ---
 

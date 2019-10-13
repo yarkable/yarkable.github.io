@@ -13,7 +13,9 @@ tags:
 
 ## preface
 
-这两天安装逆向工具 pwntools 和 pwndbg 可把爷给整懵了，尝试了各种方法，最后还是在自己双系统 ubuntu 上成功安装，这就来记录一下踩过的坑。
+这两天安装逆向工具 pwntools 和 pwndbg 可把爷给整懵了，由于 IDA Pro 在 Windows 上运行，所以用双系统的话不方便，一般都是虚拟机或者子系统安装这两个工具，但我尝试了各种方法，最后还是在自己双系统 ubuntu 上成功安装，这就来记录一下踩过的坑。
+
+> 最近更新，由于用了 SStap ，我的子系统上也成功安装了， VSCode yes！
 
 ## Install pwntools
 

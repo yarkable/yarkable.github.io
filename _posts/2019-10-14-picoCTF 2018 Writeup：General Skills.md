@@ -151,6 +151,8 @@ bin(27)
 
 > Can you find the flag in file [1] ? This would be really obnoxious to look through by hand, see if you can find a faster way. You can also find the file in /problems/grep-1_2_ee2b29d2f2b29c65db957609a3543418 on the shell server.
 
+
+
 **Hint**
 
 
@@ -168,7 +170,8 @@ bin(27)
 
 
 ```shell
-$ cd /problems/grep-1_2_ee2b29d2f2b29c65db957609a3543418                                 $ cat file | grep pico                      
+$ cd /problems/grep-1_2_ee2b29d2f2b29c65db957609a3543418                                 
+$ cat file | grep pico                      
 picoCTF{grep_and_you_will_find_42783683}     
 ```
 
@@ -183,6 +186,8 @@ picoCTF{grep_and_you_will_find_42783683}
 
 
 > Using netcat (nc) will be a necessity throughout your adventure. Can you connect to 2018shell.picoctf.com at port 49387 to get the flag?
+
+
 
 **Hint**
 
@@ -201,7 +206,9 @@ picoCTF{grep_and_you_will_find_42783683}
 
 
 ```shell
-$ nc 2018shell.picoctf.com 49387                                                         That wasn't so hard was it?                                                               picoCTF{NEtcat_iS_a_NEcESSiTy_8b6a1fbc}    
+$ nc 2018shell.picoctf.com 49387                                                         
+That wasn't so hard was it?                                                               
+picoCTF{NEtcat_iS_a_NEcESSiTy_8b6a1fbc}    
 ```
 
 
@@ -215,6 +222,8 @@ $ nc 2018shell.picoctf.com 49387                                                
 
 
 > Can you find the flag in this file [1]  without actually running it? You can also find the file in /problems/strings_1_c7bac958dd6a4b695dc72446d8014f59 on the shell server.
+
+
 
 **Hint**
 
@@ -237,6 +246,225 @@ $ cd /problems/strings_1_c7bac958dd6a4b695dc72446d8014f59
 $ strings strings | grep pico              
 picoCTF{sTrIngS_sAVeS_Time_d7c8de6c}       
 ```
+
+
+
+## pipe
+
+
+
+**Question** 
+
+
+
+> During your adventure, you will likely encounter a situation where you need to process data that you receive over the network rather than through a file. Can you find a way to save the output from this program and search for the flag? Connect with 2018shell.picoctf.com 37542.
+
+
+
+**Hint**
+
+
+
+> (1) Remember the flag format is picoCTF{XXXX} 
+>
+> (2) Ever heard of a pipe? No not that kind of pipe... This [kind](http://www.linfo.org/pipes.html)
+
+
+
+**Solution**
+
+
+
+```shell
+$ nc 2018shell.picoctf.com 37542 | grep pico
+```
+
+
+
+网速慢的话会等很久，我也就回寝室之前放着程序在那跑，然后第二天过来就拿到 flag 了。。
+
+
+
+## grep 2
+
+
+
+**Question** 
+
+
+
+> This one is a little bit harder. Can you find the flag in /problems/grep-2_3_826f886f547acb8a9c3fccb030e8168d/files on the shell server? Remember, grep is your friend.
+
+
+
+**Hint**
+
+
+
+> Linux grep tutorial
+
+
+
+**Solution**
+
+
+
+这次进入目录之后会由很多文件夹，每一个文件夹里面又有很多个子文件夹，所以要用到 `grep` 的递归寻找，同时还可以直接用 `cat*/* ` 来遍历输出所有文件的内容再用 `grep` 命令搜索
+
+
+
+```shell
+$ grep -r pico                        files6/file16:picoCTF{grep_r_and_you_will_find_556620f7} 
+$ cat */* | grep pico  # this is fine too
+picoCTF{grep_r_and_you_will_find_556620f7} 
+```
+
+
+
+## Aca-Shell-A
+
+
+
+**Question** 
+
+
+
+> It's never a bad idea to brush up on those linux skills or even learn some new ones before you set off on this adventure! Connect with nc 2018shell.picoctf.com 27833.
+
+
+
+**Hint**
+
+
+
+> Linux for Beginners
+
+
+
+**Solution**
+
+
+
+这题不想吐槽。。vps 性能差的话根本就做不了题目，动不动就中断，重连了十几次才成功做出来。总之他会输出一些提示，按照他的提示输入基本的 Linux 命令就能够拿到 flag 
+
+
+
+## environ
+
+
+
+**Question** 
+
+
+
+> Sometimes you have to configure environment variables before executing a program. Can you find the flag we've hidden in an environment variable on the shell server?
+
+
+
+**Hint**
+
+
+
+> [unix env](https://www.tutorialspoint.com/unix/unix-environment.htm) 
+
+
+
+**Solution**
+
+
+
+考察 Linux 环境变量，只需用用一条 `printenv` 命令就可以输出所有的环境变量
+
+
+
+```shell
+$ printenv | grep pico 
+SECRET_FLAG=picoCTF{eNv1r0nM3nT_v4r14Bl3_fL4g_3758492}  
+```
+
+
+
+## you can't see me
+
+
+
+**Question** 
+
+
+
+> '...reading transmission... Y.O.U. .C.A.N.'.T. .S.E.E. .M.E.  ...transmission ended...' Maybe something lies in /problems/you-can-t-see-me_3_1a39ec6c80b3f3a18610074f68acfe69.
+
+
+
+**Hint**
+
+
+
+> (1) What command can see/read files? 
+>
+> (2) What's in the manual page of ls?
+
+
+
+**Solution**
+
+
+
+进去输入 `ls` ,发现是空的，可能有隐藏文件夹， `ls -al` 可以看到下面的东西，有个名叫 `.` 的隐藏文件，但是又不能用 `cat .` 来查看他里面的内容，因为 `.` 在 Linux 系统中有特殊含义
+
+
+
+```shell
+drwxr-xr-x   2 root       root        4096 Mar 25  2019 .                                 -rw-rw-r--   1 hacksports hacksports    57 Mar 25  2019 .                                 drwxr-x--x 556 root       root       53248 Mar 25  2019 ..  
+```
+
+
+
+可以用 `cat .*` 来查看
+
+
+
+```shell
+cat: .: Is a directory                                                                   cat: ..: Permission denied                                                               picoCTF{j0hn_c3na_paparapaaaaaaa_paparapaaaaaa_cf5156ef} 
+```
+
+
+
+## absolutely relative
+
+
+
+**Question** 
+
+
+
+> In a filesystem, everything is relative ¯\_(ツ)_/¯. Can you find a way to get a flag from this program [1] ? You can find it in /problems/absolutely-relative_0_d4f0f1c47f503378c4bb81981a80a9b6 on the shell server. Source [2] .
+
+
+
+**Hint**
+
+
+
+> (1) Do you have to run the program in the same directory? (⊙.☉)7
+>
+>  (2) Ever used a text editor? Check out the program 'nano'
+
+
+
+**Solution**
+
+
+
+这题考的是绝对目录和相对目录的区别，虽然我们在
+
+
+
+
+
+
+
+
 
 
 

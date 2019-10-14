@@ -141,6 +141,53 @@ bin(27)
 
 
 
+## ssh-keyz
+
+
+
+**Question** 
+
+
+
+> As nice as it is to use our webshell, sometimes its helpful to connect directly to our machine. To do so, please add your own public key to ~/.ssh/authorized_keys, using the webshell. The flag is in the ssh banner which will be displayed when you login remotely with ssh to  with your username.
+
+
+
+**Hint**
+
+
+
+> (1) key generation tutorial [[1]](https://confluence.atlassian.com/bitbucketserver/creating-ssh-keys-776639788.html) 
+>
+>  (2) We also have an expert demonstrator to help you along. [link [2]](https://www.youtube.com/watch?v=3CN65ccfllU&list=PLJ_vkrXdcgH-lYlRV8O-kef2zWvoy79yP&index=4) 
+
+
+
+**Solution**
+
+
+
+看教程，在自己的 PC 上生成 ssh-key ，然后将公钥内容复制到服务器的 `./ssh/authorized_keys` 里面，以后就可以直接用 ssh 登录服务器不用输密码了，不添加的话可以连上服务器，但每次都要输入平台密码。
+
+
+
+```shell
+# 本地 PC 
+$ ssh-keygen -t rsa -C "your_email@example.com"
+$ ssh yarkable@2018picoctf.com
+picoCTF{who_n33ds_p4ssw0rds_38dj21}  
+```
+
+
+
+```shell
+# 服务器
+$ mkdir .ssh
+$ cd .ssh ; vim authorized_keys
+```
+
+
+
 ## grep 1
 
 
@@ -456,11 +503,66 @@ cat: .: Is a directory                                                          
 
 
 
-这题考的是绝对目录和相对目录的区别，虽然我们在
+这题考的是绝对目录和相对目录的区别，打开题目给的 C 程序分析
 
 
 
+```c
+#include <stdio.h>
+#include <string.h>
 
+#define yes_len 3
+const char *yes = "yes";
+
+int main()
+{
+    char flag[99];
+    char permission[10];
+    int i;
+    FILE * file;
+
+
+    file = fopen("/problems/absolutely-relative_0_d4f0f1c47f503378c4bb81981a80a9b6/flag.txt" , "r");
+    if (file) {
+    	while (fscanf(file, "%s", flag)!=EOF)
+    	fclose(file);
+    }   
+	
+    file = fopen( "./permission.txt" , "r");
+    if (file) {
+    	for (i = 0; i < 5; i++){
+            fscanf(file, "%s", permission);
+        }
+        permission[5] = '\0';
+        fclose(file);
+    }
+    
+    if (!strncmp(permission, yes, yes_len)) {
+        printf("You have the write permissions.\n%s\n", flag);
+    } else {
+        printf("You do not have sufficient permissions to view the flag.\n");
+    }
+    
+    return 0;
+}
+```
+
+
+
+可以观察到，flag 是以绝对目录的形式读入文件的， `permission.txt` 是相对路径，也就是在当前工作目录下的一个文件，通过分析程序逻辑，我们可以知道，当 permission 和 yes 前三个字符内容一样的时候就会输出 flag，利用这个我们可以在 home 目录下新建 `permission.txt` 文件，写入 ' yes ' ，然后直接在当前目录运行程序就拿到了 flag
+
+
+
+```shell
+$ pwd                                                                                     
+/home/yarkable                                                                           
+$ echo 'yes' > permission.txt                                                             
+$ cat permission.txt                                                                     
+yes                                                                                       
+$ /problems/absolutely-relative_0_d4f0f1c47f503378c4bb81981a80a9b6/absolutely-relative   
+You have the write permissions.                                                           
+picoCTF{3v3r1ng_1$_r3l3t1v3_befc0ce1}       
+```
 
 
 

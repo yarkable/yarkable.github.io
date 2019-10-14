@@ -361,7 +361,8 @@ $ nc 2018shell.picoctf.com 37542 | grep pico
 
 
 ```shell
-$ grep -r pico                        files6/file16:picoCTF{grep_r_and_you_will_find_556620f7} 
+$ grep -r pico                        
+files6/file16:picoCTF{grep_r_and_you_will_find_556620f7} 
 $ cat */* | grep pico  # this is fine too
 picoCTF{grep_r_and_you_will_find_556620f7} 
 ```
@@ -462,7 +463,9 @@ SECRET_FLAG=picoCTF{eNv1r0nM3nT_v4r14Bl3_fL4g_3758492}
 
 
 ```shell
-drwxr-xr-x   2 root       root        4096 Mar 25  2019 .                                 -rw-rw-r--   1 hacksports hacksports    57 Mar 25  2019 .                                 drwxr-x--x 556 root       root       53248 Mar 25  2019 ..  
+drwxr-xr-x   2 root       root        4096 Mar 25  2019 .                                 
+-rw-rw-r--   1 hacksports hacksports    57 Mar 25  2019 .                                 
+drwxr-x--x 556 root       root       53248 Mar 25  2019 ..  
 ```
 
 
@@ -472,7 +475,9 @@ drwxr-xr-x   2 root       root        4096 Mar 25  2019 .                       
 
 
 ```shell
-cat: .: Is a directory                                                                   cat: ..: Permission denied                                                               picoCTF{j0hn_c3na_paparapaaaaaaa_paparapaaaaaa_cf5156ef} 
+cat: .: Is a directory                                                                   
+cat: ..: Permission denied                                                              
+picoCTF{j0hn_c3na_paparapaaaaaaa_paparapaaaaaa_cf5156ef} 
 ```
 
 
@@ -512,6 +517,7 @@ cat: .: Is a directory                                                          
 #include <string.h>
 
 #define yes_len 3
+
 const char *yes = "yes";
 
 int main()

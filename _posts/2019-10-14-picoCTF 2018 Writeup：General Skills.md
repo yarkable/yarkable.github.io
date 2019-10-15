@@ -8,13 +8,14 @@ header-img: img/green-bg.jpg
 catalog: true
 tags:
     - writeup
+    - security
 ---
 
 ## preface
 
 
 
-在边学习 ctf 的过程中，大佬叫我们可以去做题目，边做题边积累，picoCTF 是面向美国高中生的 ctf 比赛，比较基础，适合我这种弱鸡，在做完了基础部分后觉得自己的认知增进不少，就写个 writeup 来记录一下解题过程，本篇文章应该会长期更新。
+在边学习 ctf 的过程中，大佬叫我们可以去做题目，边做题边积累，picoCTF 是面向美国高中生的 ctf 比赛，比较基础，适合我这种弱鸡，在做完了基础部分后觉得自己的认知增进不少，就写个 writeup 来记录一下解题过程，本篇文章会持续更新。
 
 
 
@@ -475,6 +476,7 @@ drwxr-x--x 556 root       root       53248 Mar 25  2019 ..
 
 
 ```shell
+$ cat */* | grep pico
 cat: .: Is a directory                                                                   
 cat: ..: Permission denied                                                              
 picoCTF{j0hn_c3na_paparapaaaaaaa_paparapaaaaaa_cf5156ef} 
@@ -568,6 +570,40 @@ yes
 $ /problems/absolutely-relative_0_d4f0f1c47f503378c4bb81981a80a9b6/absolutely-relative   
 You have the write permissions.                                                           
 picoCTF{3v3r1ng_1$_r3l3t1v3_befc0ce1}       
+```
+
+
+
+## what base is this
+
+
+
+**Question** 
+
+
+
+> To be successful on your mission, you must be able read data represented in different ways, such as hexadecimal or binary. Can you get the flag from this program to prove you are ready? Connect with nc 2018shell.picoctf.com 31711.
+
+
+
+**Hint**
+
+
+
+> (1) I hear python is a good means (among many) to convert things. 
+>
+> (2) It might help to have multiple windows open
+
+**Solution**
+
+
+
+这题把爷给整懵了，开始一直不知道他叫我们干什么，后来上网搜索才知道让我们将给出的不同进制的数转化成 ASCII 字符串输进服务器，一开始是二进制的，然后是十六进制和八进制的，由于只有 30s 的作答时间，所以这题用 python 的 pwntools 模块可以很快的求出来
+
+
+
+```python
+
 ```
 
 

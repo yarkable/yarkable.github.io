@@ -598,17 +598,91 @@ picoCTF{3v3r1ng_1$_r3l3t1v3_befc0ce1}
 
 
 
-这题把爷给整懵了，开始一直不知道他叫我们干什么，后来上网搜索才知道让我们将给出的不同进制的数转化成 ASCII 字符串输进服务器，一开始是二进制的，然后是十六进制和八进制的，由于只有 30s 的作答时间，所以这题用 python 的 pwntools 模块可以很快的求出来
+这题把爷给整懵了，开始一直不知道他叫我们干什么，后来上网搜索才知道让我们将给出的不同进制的数转化成 ASCII 字符串输进服务器，一开始是二进制的，然后是十六进制和八进制的，由于只有 30s 的作答时间，所以这题用 python 的 `pwntools` 模块可以很快的求出来
 
 
 
 ```python
+from pwn import *
+import binascii as ba
 
+# connect to remote
+sh = remote('2018shell.picoctf.com', 31711)
+
+# binary to string
+data = str(sh.recvuntil('Input:'))
+res = data.split('\\n')[-3][19: -11].split(' ')
+ans = ''.join(chr(int(i, 2)) for i in res)
+sh.sendline(ans)
+
+# hex to string
+data = str(sh.recvuntil('Input:'))
+res = data.split('\\n')[-2][19: -11]
+ans = str(ba.a2b_hex(res))[2: -1]
+sh.sendline(ans)
+
+# oct to string
+data = str(sh.recvuntil('Input:'))
+res = data.split('\\n')[-2][20: -11].split(' ')
+ans = ''.join(chr(int(i, 8)) for i in res)
+sh.sendline(ans)
+
+print(sh.recvall())
 ```
 
+然后发现 `pwntools` 中竟然有现成的进制转化的方法，二进制那里也可以写成下面这样
+
+```python
+data = str(sh.recvuntil('Input:'))
+res = data.split('\\n')[-3][19: -11]
+sh.sendline(unbits(res.replace(' ', '')))
+```
+
+运行完脚本后就拿到了 flag
+
+```python
+[+] Opening connection to 2018shell.picoctf.com on port 31711: Done
+[+] Receiving all data: Done (88B)
+[*] Closed connection to 2018shell.picoctf.com port 31711
+b"\nYou got it! You're super quick!\nFlag: picoCTF{delusions_about_finding_values_68051dea}\n"
+```
+
+## store
 
 
 
+**Question** 
+
+
+
+> We started a little store [1] , can you buy the flag? Source [2] . Connect with 2018shell.picoctf.com 43581.
+
+
+
+**Hint**
+
+
+
+> (1) Two's compliment can do some weird things when numbers get really big!
+
+
+
+**Solution**
+
+
+
+这题的话给出一个可执行程序，给了一个源代码，分析一下程序，出口处是这一段代码
+
+
+
+```cpp
+if(account_balance > 100000){
+printf("YOUR FLAG IS:\n");
+}
+else{
+printf("\nNot enough funds for transaction\n\n\n");
+}
+```
 
 
 

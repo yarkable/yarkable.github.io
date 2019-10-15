@@ -21,9 +21,7 @@ RSS: false
 weibo_username:     5532339354
 zhihu_username:     li-zhi-12-92
 github_username:    yarkable
-# facebook_username:  baiying.qiu.7
 jianshu_username:   5e14129c4ad7
-# twitter_username:   qiubaiying
 
 
 
@@ -103,7 +101,7 @@ friends: [
         title: "",
         href: "http://zhengwuyang.com"
     },{
-        title: "简书",
-        href: "https://www.jianshu.com/u/5e14129c4ad7"
+        title: "PRIN BLOG",
+        href: "https://printempw.github.io"
     }
 ]

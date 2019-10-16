@@ -33,11 +33,11 @@ tags:
 
 
 
-![](C:\Users\kevin\Desktop\blog\hyper-official.jpg)
+![hyper](https://ae01.alicdn.com/kf/H601b15c013ed41c4a7d4770878750f7f7.jpg)
 
 
 
-### 更换默认 shell
+## 更换默认 shell
 
 
 
@@ -45,7 +45,7 @@ tags:
 
 
 
-![](C:\Users\kevin\Desktop\blog\cfg.jpg)
+![config](https://ae01.alicdn.com/kf/Hf8774b8fe1174c84b39b281feec752beH.jpg)
 
 
 
@@ -53,11 +53,11 @@ tags:
 
 
 
-![](C:\Users\kevin\Desktop\blog\cfg.gif)
+![config_all](https://ae01.alicdn.com/kf/Hac027268cf4f451d8ba4172fe097e567X.gif)
 
 
 
-### 下载Hyper插件
+## 下载Hyper插件
 
 
 
@@ -65,7 +65,7 @@ Hyper 的生态圈特别活跃，拥有特别多的插件，官网也推荐了�
 
 
 
-![](C:\Users\kevin\Desktop\blog\plugin.gif)
+![plugin](https://ae01.alicdn.com/kf/Hd36715e96f644e869581bb784afd81ccZ.gif)
 
 
 
@@ -73,7 +73,7 @@ Hyper 的生态圈特别活跃，拥有特别多的插件，官网也推荐了�
 
 
 
-![](C:\Users\kevin\Desktop\blog\theme.jpg)
+![theme](https://ae01.alicdn.com/kf/Hd806a623ac584516ba7ddcd1a94107afM.jpg)
 
 
 
@@ -101,7 +101,7 @@ chsh -s /bin/zsh
 
 
 
-### 下载 oh-my-zsh
+## 下载 oh-my-zsh
 
 
 
@@ -125,17 +125,103 @@ ZSH_THEME="ys"
 
 
 
-![](C:\Users\kevin\Desktop\blog\ys_theme.jpg)
+![ys_theme](https://ae01.alicdn.com/kf/Hd50df1c6246d4d4bab3e92d7cfaa7ca62.jpg)
 
 
 
-### 下载 zsh 插件
+## 下载 zsh 插件
 
 
 
-zsh 社区还有人开发了一堆很好用的插件，这里就介绍几个
+zsh 社区还有人开发了一堆很好用的插件，这里就介绍几个我下载的插件，既可以提高效率又可以增加颜值
 
 
+
+### zsh-autosuggestions
+
+
+
+这款插件会记录你输入的历史命令，并且在终端中用灰色给你自动补全，当输入一些长的命令时就不用再去重新打了
+
+
+
+![autosuggestion](https://ae01.alicdn.com/kf/H98d6a02f74e8471e97013f31201818f6x.gif)
+
+
+
+**安装方法:**
+
+1. 将插件克隆到 oh-my-zsh 的插件管理文件夹中
+
+```shell
+$ git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+```
+
+
+
+2. 编辑 `.vimrc` 文件，将插件添加进去
+
+```shel
+plugins=(zsh-autosuggestions)
+```
+
+
+
+3. 更新 `.vimrc` 文件，或者重新开启终端
+
+```shel
+$ source .vimrc
+```
+
+
+
+### zsh-syntax-highlighting
+
+
+
+这款插件会对输入进行语法检查，正确的命令会显示绿色，错误的话会显示红色
+
+
+
+![syntax-highlighting](https://ae01.alicdn.com/kf/Hbca2147e6cd84c7d805ce1882a31ec55O.gif)
+
+
+
+**安装方法：**
+
+1. 将插件克隆到 oh-my-zsh 的插件管理文件夹中
+
+```shell
+$ git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+```
+
+
+
+2. 编辑 `.vimrc` 文件，将插件添加进去
+
+```shell
+plugins=(zsh-syntax-highlighting)
+```
+
+
+
+3. 更新 `.vimrc` 文件，或者重新开启终端
+
+```shel
+$ source .vimrc
+```
+
+
+
+## 使用体验
+
+
+
+Hyper 配合 WSL 用起来真的很爽，颜值很高，但是也有美中不足的地方，例如速度比一般的终端模拟器要慢，而且使用过程中我还发现了一些 bug，最不舒服的是在 WSL 下输入 `clear` 命令后界面并没有被清空，要用鼠标去点一下屏幕才会将终端给清空。希望在以后开发者可以进行修复，总的来说，Hyper 是我用过的终端里面最炫的一个，以后在自己的 Ubuntu 系统中也要整一个。
+
+
+
+![feedback](https://ae01.alicdn.com/kf/H4683c2769370453e859d6e7898a572acZ.gif)
 
 
 

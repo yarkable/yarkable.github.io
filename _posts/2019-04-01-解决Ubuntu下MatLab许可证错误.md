@@ -16,13 +16,13 @@ tags:
 我用的是学校校园网下载的 Mac/Win/Liunx 三合一版本 MatLab，windows 方法也相同，反正道理都是一样的。先下载解压之后，用下列命令给整个文件夹都赋予权限
 
 ```bash
-$ sudo chmod 777 matlab_xxx
+$ sudo chmod -R 777 matlab_xxx
 ```
 
 然后执行里面的 install 脚本，注意要以超级管理员的身份执行，不然之后安装的时候会提示无法安装至 /usr/local/matlab_xx 里面
 
 ```bash
-$ sudo ./install.sh
+$ sudo ./install
 ```
 
 之后会问你是否要在 /usr/local/bin 中建立一个链接，选择**是**，接下来就按部就班，输入账号后就等着安装进度条变满，就安装好了。

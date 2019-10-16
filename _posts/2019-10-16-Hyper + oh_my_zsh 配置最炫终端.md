@@ -187,25 +187,19 @@ zsh 社区还有人开发了一堆很好用的插件，这里就介绍几个我�
 
 1. 将插件克隆到 oh-my-zsh 的插件管理文件夹中
 
-```shell
-$ git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
-```
+   > git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
 
-
+   
 
 2. 编辑 `.vimrc` 文件，将插件添加进去
 
-```shell
-plugins=(zsh-syntax-highlighting)
-```
+   > plugins=(zsh-syntax-highlighting)
 
 
 
 3. 更新 `.vimrc` 文件，或者重新开启终端
 
-```shel
-$ source .vimrc
-```
+   > source .vimrc
 
 
 

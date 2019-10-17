@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      picoCTF 2018 Writeup：General Skills
-subtitle:   
+subtitle:   Continuous update :D
 date:       2019-10-14
 author:     kevin
 header-img: img/green-bg.jpg

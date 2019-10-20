@@ -40,17 +40,17 @@ f(xi, W, b) = Wxi + b
 
 * W 是权重（Weight），是一个 `C*D` 的向量，C 是分类器最终输出的类型的个数，D 是一个样本中的特征数量，其实 W 就相当于是用 C 张图片去和输入的图片进行内积操作，选出得分（Score）最大的一个类别，最终分类的结果就是这个类。W 的每一排都相当于是一张模板图片展开，如下图给出了 CIFAR-10 的一个权重图，且 W 是在训练的过程中不断更新的，因为要确保这些参数能适应所有的训练集。
 
-  ![weight](/home/kevin/gitHub/yarkable.github.io/draft/weight.png)
+  ![weight](https://ae01.alicdn.com/kf/Ha83b8bdc7e374e349ece970b0a7bd2f5q.png)
 
 * b 是偏置，也是我们需要训练的参数，相当于一次函数的截距，在线性分类器中相当于平移分隔面，而改变 W 的作用相当于是旋转了分隔面。
 
-  ![bias](/home/kevin/gitHub/yarkable.github.io/draft/hyperplane.png)
+  ![bias](https://ae01.alicdn.com/kf/H2531e6abf4574b489d4ae0d138312096N.png)
   
   
 
 * 虽然 W 和 b 表示的是不同的意义，但是我们很多情况下都是将他们两个放在一起的，将 W 和 b 组成一个增广矩阵，这样的话，xi 就多了一个维度，只需要在最后增加一个 `1` ，内积的结果就跟之前一毛一样了，这样子的好处就是我们只需要训练一个矩阵，而不用训练两个矩阵。
 
-  ![w & b](/home/kevin/gitHub/yarkable.github.io/draft/Wb.png)
+  ![w & b](https://ae01.alicdn.com/kf/Hc88d2be5297f4c469c2f399737907d52a.png)
 
 
 
@@ -66,7 +66,7 @@ f(xi, W, b) = Wxi + b
 
 
 
-![cat](/home/kevin/gitHub/yarkable.github.io/draft/cat.png)
+![cat](https://ae01.alicdn.com/kf/H2674833ce66441799c8990abc1b2135bj.png)
 
 
 
@@ -100,7 +100,7 @@ Li = ∑j≠yi max(0, wTjxi − wTyixi + Δ) //推广到向量
 
 `SVM loss` 大概的原理就是它有一个超参数 `delta` ，相当于一个 `margin` 吧，SVM 想让正确类别的分数至少比错误类别的分数高 `delta` ，如果分类之后错误的类的 `Score` 与正确类别的 `Score` 的差值在 `delta` 范围内的话就会产生 `Loss` ，否则 `Loss` 就是 0 ，也就是说其他类的得分比正确类的得分少很多。下图很好的解释了这个观点
 
-![svmLoss](/home/kevin/gitHub/yarkable.github.io/draft/svmLoss.png)
+![svmLoss](https://ae01.alicdn.com/kf/H68dea59c72ef496da41a470f942400fec.png)
 
 
 
@@ -120,7 +120,7 @@ Li = ∑j≠yi max(0, wTjxi − wTyixi + Δ) //推广到向量
 
 
 
-![RW](/home/kevin/gitHub/yarkable.github.io/draft/draft_img/rw.png)
+![RW](https://ae01.alicdn.com/kf/H9c4ffa8d97104447a7ebef168a15c434d.png)
 
 
 
@@ -128,11 +128,15 @@ Li = ∑j≠yi max(0, wTjxi − wTyixi + Δ) //推广到向量
 
 
 
-![total_loss](/home/kevin/gitHub/yarkable.github.io/draft/draft_img/sum_loss.png)
+![total_loss](https://ae01.alicdn.com/kf/H1238ff2bd1c84280a8765c0e70ba07f7d.png)
 
 
 
 将公式展开得更具体点就是下面这个 Loss function , 其中 N 就是整个样本的数量, λ 也是一个超参数, 这个值一般是通过交叉验证来确定的. 当然, 老师讲到,在划分训练集的时候就得把标签弄正确,这有助于降低 loss.
+
+
+
+![detail](https://ae01.alicdn.com/kf/Hfdfc1be027db4ed0a2991e4d47e86170W.png)
 
 
 
@@ -146,4 +150,4 @@ Li = ∑j≠yi max(0, wTjxi − wTyixi + Δ) //推广到向量
 
 > 正则化：防止模型过拟合(在训练集上表现太好)，简化模型(权重)，使其在测试集上也能表现很好
 
-![normalization](/home/kevin/gitHub/yarkable.github.io/draft/draft_img/norm.png)
+![normalization](https://ae01.alicdn.com/kf/Hae5ba152d0564d4fa53e3c11ac1abbbbv.png)

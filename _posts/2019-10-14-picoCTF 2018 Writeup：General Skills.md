@@ -647,7 +647,60 @@ sh.sendline(unbits(res.replace(' ', '')))
 b"\nYou got it! You're super quick!\nFlag: picoCTF{delusions_about_finding_values_68051dea}\n"
 ```
 
-## store
+
+
+## in out error
+
+
+
+**Question** 
+
+
+
+> Can you utlize stdin, stdout, and stderr to get the flag from this program [1] ? You can also find it in /problems/in-out-error_3_9eb10797d687f70cfce62e7c9c2bdea6 on the shell server
+
+
+
+**Hint**
+
+
+
+> (1) Maybe you can split the stdout and stderr output?
+
+
+
+**Solution**
+
+
+
+这题考察 Linux 的 `stdin`、`stdout` 和 `stderr` ，stdin 就是标准输入，用键盘敲击命令的时候就是标准输出，然后显示的结果就是标准输出，一般将 stdin 指定为 0 ， 将 stdout 指定为 1，将 stderr 指定为 2 
+
+
+
+```shell
+/dev/stdin 0
+/dev/stdout 1
+/dev/stderr 2
+/dev/null 黑洞???
+```
+
+
+
+登录网站运行这个程序就叫我输入一段话，按他要求输入之后就输出一堆东西，其实直接用个 `grep` 就出来 flag 了，但是既然题目这么说的话，就将 stdout 和 stderr 分开来，在 stderr 里面能找到 flag
+
+
+
+```shell
+$ echo 'Please may I have the flag?' | ./in-out-error 1> ~/stdout.txt 2> ~/stderr.txt 
+$ cd
+$ vim stderr.txt
+```
+
+
+
+
+
+## store(haven't done)
 
 
 
@@ -686,3 +739,80 @@ printf("\nNot enough funds for transaction\n\n\n");
 
 
 
+## learn gdb(haven't done)
+
+
+
+**Question** 
+
+
+
+> Using a debugging tool will be extremely useful on your missions. Can you run this program  in gdb and find the flag? You can find the file in /problems/learn-gdb_1_a2decdea3e89bfcdcbd9de1a67ceed0e on the shell server.
+
+
+
+**Hint**
+
+
+
+> (1) Try setting breakpoints in gdb 
+>
+> (2) Try and find a point in the program after the flag has been read into memory to break on 
+>
+> (3) Where is the flag being written in memory?
+
+
+
+**Solution**
+
+
+
+
+
+## roulette(haven't done)
+
+
+
+**Question** 
+
+
+
+> This Online Roulette [1]  Service is in Beta. Can you find a way to win $1,000,000,000 and get the flag? Source [2] . Connect with nc 2018shell.picoctf.com 25443
+
+
+
+**Hint**
+
+
+
+> (1) There are 2 bugs!
+
+
+
+**Solution**
+
+
+
+
+
+## script me(haven't done)
+
+
+
+**Question** 
+
+
+
+> Can you understand the language and answer the questions to retrieve the flag? Connect to the service with nc 2018shell.picoctf.com 1542
+
+
+
+**Hint**
+
+
+
+> (1) Maybe try writing a python script?
+
+
+
+**Solution**

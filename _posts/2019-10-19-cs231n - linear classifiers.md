@@ -1,19 +1,17 @@
 ---
 
-layout:     post
-title:      cs231n - linear classifiers
-subtitle:   
-date:       2019-10-19
-author:     kevin
+layout: post
+title: cs231n - linear classifiers
+subtitle:
+date: 2019-10-19
+author: kevin
 header-img: img/green-bg.jpg
 catalog: true
 tags:
     - deep learning
 	- reading notes
+
 ---
-
-
-
 
 
 

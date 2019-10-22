@@ -1,4 +1,5 @@
 ---
+
 layout:     post
 title:      cs231n - linear classifiers
 subtitle:   真的希望人人都能用上 Google
@@ -9,6 +10,7 @@ catalog: true
 tags:
     - deep learning
 	- reading notes
+
 ---
 
 

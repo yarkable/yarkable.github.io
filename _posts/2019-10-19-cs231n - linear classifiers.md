@@ -2,7 +2,7 @@
 
 layout:     post
 title:      cs231n - linear classifiers
-subtitle:   真的希望人人都能用上 Google
+subtitle:   
 date:       2019-10-19
 author:     kevin
 header-img: img/green-bg.jpg
@@ -10,8 +10,8 @@ catalog: true
 tags:
     - deep learning
 	- reading notes
-
 ---
+
 
 
 

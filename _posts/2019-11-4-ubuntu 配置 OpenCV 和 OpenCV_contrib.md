@@ -107,3 +107,11 @@ $ make -j
 
 
 ![opencv-3.jpg](https://i.loli.net/2019/11/04/tcJ7KsVA9Ilyojn.jpg)
+
+
+
+勿念！！
+
+
+
+![opencv-4.jpg](https://i.loli.net/2019/11/04/Z1ztcnBC42AWliY.jpg)

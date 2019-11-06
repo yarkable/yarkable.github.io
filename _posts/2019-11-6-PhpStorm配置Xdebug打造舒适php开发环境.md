@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      PhpStorm配置Xdebug打造舒适php开发环境
-subtitle:   TODO
+subtitle:   php是全世界最好的语言(误
 date:       2019-11-6
 author:     kevin
 header-img: img/green-bg.jpg
@@ -68,9 +68,43 @@ bb 得也差不多了，今天就先来配置环境吧，以前用的是 sublime
 
 
 
-好的，三样东西都齐活了，就下去就让他们组装在一起，首先，我们
+好的，三样东西都齐活了，就下去就让他们组装在一起，首先，我们对 php 进行配置，时隔这么久，我都忘记怎么配置的了，只能去网上找教程了，在 php 安装目录里面有个 `php.ini-development` 文件，我们拷贝一份，重命名为 `php.ini` ，之后的配置就在 `php.ini` 中修改
 
 
+
+首先，在 ini 文件中找到 `extension_dir` 这一行，取消前面的 `;` 注释，再修改 php 拓展路径为 php 安装路径中的 `ext` 文件夹，否则默认是在 `C:\PHP\ext` 中
+
+
+
+```
+ extension_dir = "Your PHP Dir\ext"
+```
+
+
+
+然后我们再将下载好的 Xdebug 插件移动到上面的 ext 文件夹中（这里我有两个，是因为我下错了一个版本==）
+
+
+
+![xdebug.dll](https://i.loli.net/2019/11/06/Kv28xRGgSlWsafe.png)
+
+
+
+之后在 php.ini 中添加 Xdebug 的扩展，就在配置文件的最后加上下面的几行（这里是我的配置，路径因人而异哈）
+
+
+
+```
+[xdebug]
+zend_extension="F:\php-7.2.24-Win32-VC15-x64\ext\php_xdebug-2.8.0-7.2-vc15-x86_64.dll"
+xdebug.remote_enable=1
+xdebug.remote_port=9000
+xdebug.idekey=PHPSTORM
+```
+
+
+
+## 配置 PhpStorm
 
 
 

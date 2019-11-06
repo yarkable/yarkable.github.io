@@ -36,7 +36,11 @@ bb 得也差不多了，今天就先来配置环境吧，以前用的是 sublime
 
 
 
-直接上官网，下载，完事
+直接上[官网](https://www.jetbrains.com/phpstorm/)，下载，安装，完事，用学生账号注册的话是免费使用 professional 版本的，JetBrains 家的东西就是体积大了点，香还是挺香的。
+
+
+
+![image.png](https://i.loli.net/2019/11/06/NBWXfDZTHUVRuak.png)
 
 
 
@@ -52,7 +56,7 @@ bb 得也差不多了，今天就先来配置环境吧，以前用的是 sublime
 
 
 
-## 下载 Xdebug
+## 安装 Xdebug
 
 
 
@@ -107,4 +111,26 @@ xdebug.idekey=PHPSTORM
 ## 配置 PhpStorm
 
 
+
+最后一项，在 PhpStorm 中配置 php 解释器，按下 `ctrl+alt+s` 打开设置面板，选择 `Languages & Frameworks` 中的 `PHP` 选项卡，然后选择我们的 php 版本，并且在系统路径中寻找到我们的 php 解释器
+
+
+
+![phpstorm](https://i.loli.net/2019/11/06/7EVgkyHa4w6QWib.png)
+
+
+
+如果之前的 Xdebug 配置正确的话，是可以直接找到 debugger 的信息的，如果没装对的话就得看看是不是哪里出了问题，Xdebug 官网有个[工具](https://xdebug.org/wizard)可以智能检测到我们缺少哪些东西并给出建议，只需要把我们的 phpinfo() 函数里面输出的信息或者在终端输入 `php -i` 之后输出的内容复制进去，就能知道我们接下来需要做什么，就像下面这样子
+
+
+
+![wizard](https://i.loli.net/2019/11/06/wmsunI69tdL51Dx.png)
+
+
+
+到这一步的话就可以了，我们随便写个 php 脚本，然后按下运行，开冲！发现这种牛逼的 IDE 的智能补全真的到位，一直按着 tab 就完事了，都不用动脑子。
+
+
+
+![php-script](https://i.loli.net/2019/11/06/A3D7Yia4mNXken8.png)
 

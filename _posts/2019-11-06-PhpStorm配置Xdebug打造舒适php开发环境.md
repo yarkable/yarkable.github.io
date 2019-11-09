@@ -2,7 +2,7 @@
 layout:     post
 title:      PhpStorm配置Xdebug打造舒适php开发环境
 subtitle:   php是全世界最好的语言(误
-date:       2019-11-6
+date:       2019-11-06
 author:     kevin
 header-img: img/green-bg.jpg
 catalog: true

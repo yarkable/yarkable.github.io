@@ -2,7 +2,7 @@
 layout:     post
 title:      ubuntu 配置 OpenCV 和 OpenCV_contrib
 subtitle:   TODO
-date:       2019-11-4
+date:       2019-11-04
 author:     kevin
 header-img: img/green-bg.jpg
 catalog: true

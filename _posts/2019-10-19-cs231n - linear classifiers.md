@@ -10,8 +10,13 @@ catalog: true
 tags:
     - deep learning
     - reading notes
-
 ---
+
+
+
+
+
+## preface
 
 
 
@@ -24,7 +29,9 @@ tags:
 
 
 
----
+## score function
+
+
 
 线性分类器通过设计 `Score function` 和 `Loss function` 来实现分类， 函数原型如下
 
@@ -83,7 +90,11 @@ f(xi, W, b) = Wxi + b
 
 
 
----
+## loss function
+
+
+
+### SVM loss
 
 
 
@@ -151,3 +162,70 @@ Li = ∑j≠yi max(0, wTjxi − wTyixi + Δ) //推广到向量
 > 正则化：防止模型过拟合(在训练集上表现太好)，简化模型(权重)，使其在测试集上也能表现很好
 
 ![normalization](https://ae01.alicdn.com/kf/Hae5ba152d0564d4fa53e3c11ac1abbbbv.png)
+
+
+
+### Softmax loss
+
+
+
+SVM 是常见的一种分类器，还有一种常见的就是 Softmax 了，记得之前在 Logistic regression 二分类问题中，我们可以使用 sigmoid 函数将输入 Wx + b 映射到 (0, 1) 区间中，从而得到属于某个类别的概率。将这个问题进行泛化，推广到多分类问题中，我们可以使用 softmax 函数，对输出的值归一化为概率值。
+
+
+
+先来看看 softmax 函数的公式，就像下面这样，假设进入 softmax 之前，全连接层输出了样本的类别数，一共 C 个，因此有 C　个类别，用 a1, a2 , a3 …… ac 表示，因此，对于每个样本，它属于类别 i 的概率为：
+
+
+
+![](C:\Users\kevin\Desktop\blog\linear_1.jpg)
+
+
+
+公式的上面是 e 对当前输出的指数次方，下面是所有类别输出的指数之和，因此，很容易理解这是在求概率，函数相加之和（y1, y2, y3 ,……yc）为 1
+
+
+
+然后 softmax loss 就用指数的形式来表示，像下面这样，这是 softmax 的 data loss 部分：
+
+
+
+![](C:\Users\kevin\Desktop\blog\linear_2.jpg)
+
+
+
+>  这个公式倒是好理解，不过课件中又有涉及到交叉熵的概念，交叉熵就等以后学到了再来讲吧，暂时不用用到
+
+
+
+下面给出 softmax loss 和 svm loss 的对比图，可见 svm 就是用上面提到的 max 策略来计算 loss ，而 softmax 则是将输出进行指数操作，再归一化求得每一个类别的概率，最后用上面的公式来计算 loss ，这种方式可以将类别的概率（置信度）直观地呈现出来，但注意，softmax loss 得到 loss 的数字和 SVM loss 得到的数字没有可比性，只能在同一个分类器中进行比较
+
+
+
+> SVM 想要正确类别的 score 尽量高，softmax 想要正确类别的对数概率尽量高
+
+
+
+![](C:\Users\kevin\Desktop\blog\linear_3.jpg)
+
+
+
+TODO
+
+
+
+## summary
+
+
+
+1. 定义了线性方程 score function 将图像像素转化成各类别的 score
+2. 线性分类器使通过训练 W 和 b 起作用的，不用储存图像信息，比 KNN 高效很多
+3. 通过增广矩阵将 W 和 b 放在一个矩阵中就只用训练一个矩阵，不用训练两个
+4. 定义损失函数 loss function (介绍了两种在线性分类器上常使用的 loss ：SVM 和 softmax) 来评估这些参数得出的结果有多贴近样本本身的类别，损失函数的定义是：对训练数据做出良好预测就等同于损失很小
+
+
+
+## reference
+
+
+
+https://zhuanlan.zhihu.com/p/27223959

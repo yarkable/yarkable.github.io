@@ -29,17 +29,17 @@ tags:
  ```python
  pip3 install jupyter-notebook
  ```
- 
+
 如果 python 发行版是 Anaconda 的话是自带 jupyter notebook 的，不需要安装。
- 
+
 安装完成之后在命令行输入以下命令就会新建一个服务器，同时本地的浏览器会打开 jupyter 界面
- 
+
 ```bash
 $ jupyter-notebook
 ```
- 
+
 使用教程可以上网搜索，在此不过多讲述。
- 
+
 ## 配置
 
 ### 配置局域网访问
@@ -92,4 +92,32 @@ passwd()
 ![jupyter跑神经网络](https://ae01.alicdn.com/kf/H694fb897171449e19e07319ec43916b2C.png)
 
 从此只要连上了学校的 wifi 就可以随时随地访问主机中运行的 Jupyter notebook 了，使用 iPad 配合一个蓝牙键盘写 python 的体验真的很好，尤其是支持自动补全。而且还可以在 jupyter 中新建终端，相当于直接用 ssh 协议访问本地机器，真的很爽，谁用谁知道，而且我还可以在里面跑神经网络，使用跟电脑几乎没差别，在图书馆或寝室想写写代码的话用这个方法再好不过了！
+
+
+
+## 更改文件保存路径
+
+
+
+默认情况下， jupyter 是将文件保存在用户目录下面的，这样就很恶心，我们可以改变它的保存位置
+
+
+
+```
+cd 
+cd .jupyter
+vim jupyter_notebook_config.py
+```
+
+
+
+打开配置文件之后找到下面这一行，可以看到是被注释的，取消注释，然后在里面填上我们想要保存的位置就行了
+
+
+
+```
+#c.NotebookApp.notebook_dir = ''
+```
+
+
 

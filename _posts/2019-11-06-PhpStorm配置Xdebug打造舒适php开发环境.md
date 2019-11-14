@@ -108,6 +108,19 @@ xdebug.idekey=PHPSTORM
 
 
 
+**更新**
+
+
+
+ php 要使能 MySQL 的话还要在 ini 文件中找到下面几句话，取消注释
+
+```sql
+extension=mysqli
+date.timezone = Asia/Shanghai
+```
+
+
+
 ## 配置 PhpStorm
 
 

@@ -1,7 +1,7 @@
 ---
 layout: post
 title: win10平台nginx+php+mysql填坑之路
-subtitle: 一次作死的瞎搞
+subtitle: 假教程是真的坑爹
 date: 2019-11-14
 author: kevin
 header-img: img/green-bg.jpg
@@ -48,7 +48,7 @@ tags:
 
 
 
-```powershell
+```
 nginx -s stop # 强制停止 nginx
 nginx -s quit # 退出 nginx 
 nginx -s reload # 重启 nginx
@@ -230,7 +230,7 @@ location ~ \.php$ {
 
 
 
-```powershell
+```shell
 @echo off
 REM Windows 下无效
 REM set PHP_FCGI_CHILDREN=5
@@ -251,7 +251,7 @@ RunHiddenConsole F:\nginx-1.16.1\nginx.exe
 
 
 
-```powershell
+```shell
 @echo off
 echo Stopping nginx...
 taskkill /F /IM nginx.exe > nul

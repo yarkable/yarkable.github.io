@@ -40,6 +40,23 @@ tags:
 
 
 
+## ATTENTION
+
+
+
+写在前面，下面每次更改配置之后都要重启 nginx ，一定要记得重启，否则改动是不会生效的，因此这里给出常用的几个 nginx 服务命令：
+
+
+
+```powershell
+nginx -s stop # 强制停止 nginx
+nginx -s quit # 退出 nginx 
+nginx -s reload # 重启 nginx
+start nginx # 开启 nginx
+```
+
+
+
 ## 进行配置
 
 
@@ -79,7 +96,7 @@ default-storage-engine=INNODB
 
 
 
-![](C:\Users\kevin\Desktop\blog\nginx.jpg)
+![nginx.jpg](https://i.loli.net/2019/11/15/q9VEyUoIiNSMpv1.jpg)
 
 
 
@@ -87,7 +104,7 @@ default-storage-engine=INNODB
 
 
 
-```ini
+```
 location / {
     root   html;
     index  index.html index.htm index.php;
@@ -109,13 +126,13 @@ cgi.fix_pathinfo=1
 
 
 
-> 先说下出问题的做法
+> 先说下错误的做法
 
 
 
-在 `nginx.ini` 第 65 行以后取消注释，就是下面这样子
+在 `nginx.conf` 第 65 行以后取消注释，就是下面这样子
 
-```ini
+```
 location ~ \.php$ {
     root           html;
     fastcgi_pass   127.0.0.1:9000;
@@ -157,7 +174,7 @@ netstat -ano|findstr "9000"
 
 在浏览器中输入 `localhost/index.php` ，出事了，直接就叫我下载 `index.php`了，说明 php-cgi 程序并没有正确解释，因此，我参照网上的说法又对 `nginx.conf` 进行了如下修改，将 `root` 地址改为了站点的绝对路径，`fastcgi_param` 中的 `/script` 改成了 `$document_root` ，这个就代表了上面的 root 目录。
 
-```ini
+```
 location ~ \.php$ {
     root           F:\nginx-1.16.1\html;
     fastcgi_pass   127.0.0.1:9000;
@@ -181,7 +198,7 @@ No input file specified.
 
 
 
-```ini
+```
 location ~ \.php$ {
     root           "F:/nginx-1.16.1/html";
     fastcgi_pass   127.0.0.1:9000;
@@ -197,7 +214,55 @@ location ~ \.php$ {
 
 
 
-下载 [RunHiddenConsole](https://redmine.lighttpd.net/attachments/660/RunHiddenConsole.zip) ，顾名思义，这个玩意会将跑程序的终端隐藏起来，像 php 和 php-cgi 等程序开启之后一直挂在那里，我们不能用那个
+上面这些命令太麻烦了，在 Windows 上敲命令真是件不愉快的事情，因此我们可以将这些命令集合成一个脚本，每次只要运行一下脚本就运行了所有命令！
+
+
+
+下载 [RunHiddenConsole](https://redmine.lighttpd.net/attachments/660/RunHiddenConsole.zip) ，顾名思义，这个玩意会将跑程序的终端隐藏起来，像 php 和 php-cgi 等程序开启之后一直挂在那里，我们不能用那个终端干其他事，就很烦，然后我们可以在 windows 上用这个将他们隐藏起来，下载后将它解压在 nginx 的安装文件中
+
+
+
+![nginx2.jpg](https://i.loli.net/2019/11/15/aRQ3Ui7CfST2ykr.jpg)
+
+
+
+在当前目录编写启动脚本 `start_nginx.bat` ：
+
+
+
+```powershell
+@echo off
+REM Windows 下无效
+REM set PHP_FCGI_CHILDREN=5
+
+REM 每个进程处理的最大请求数，或设置为 Windows 环境变量
+set PHP_FCGI_MAX_REQUESTS=1000
+
+echo Starting PHP FastCGI...
+RunHiddenConsole F:\php-7.2.24-Win32-VC15-x64\php-cgi.exe -b 127.0.0.1:9000 -c F:\php-7.2.24-Win32-VC15-x64\php.ini
+
+echo Starting nginx...
+RunHiddenConsole F:\nginx-1.16.1\nginx.exe
+```
+
+
+
+再编写一个 `kill_nginx.bat` ：
+
+
+
+```powershell
+@echo off
+echo Stopping nginx...
+taskkill /F /IM nginx.exe > nul
+echo Stopping PHP FastCGI...
+taskkill /F /IM php-cgi.exe > nul
+exit
+```
+
+
+
+以后双击两下 `start_nginx.bat` 就打开了服务，双击 `kill_nginx.bat` 就将服务给关闭了，很方便，不用自己再去开那么多命令行窗口手动敲命令了！
 
 
 
@@ -205,3 +270,6 @@ location ~ \.php$ {
 
 
 
+https://mobilesite.github.io/2017/03/26/config-and-use-of-php-nginx-mysql/
+
+https://my.oschina.net/kenshiro/blog/187926

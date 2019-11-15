@@ -218,7 +218,7 @@ location ~ \.php$ {
 
 
 
-下载 [RunHiddenConsole](https://redmine.lighttpd.net/attachments/660/RunHiddenConsole.zip) ，顾名思义，这个玩意会将跑程序的终端隐藏起来，像 php 和 php-cgi 等程序开启之后一直挂在那里，我们不能用那个终端干其他事，就很烦，然后我们可以在 windows 上用这个将他们隐藏起来，下载后将它解压在 nginx 的安装文件中
+下载 [RunHiddenConsole](https://redmine.lighttpd.net/attachments/660/RunHiddenConsole.zip) ，顾名思义，这个玩意会将跑程序的终端隐藏起来，像 php 和 php-cgi 等程序开启之后一直挂在那里，我们不能用那个终端干其他事，就很烦，然后我们可以在 windows 上用这个将他们隐藏起来。下载 RunHiddenConsole 后将它解压在 nginx 的安装文件中
 
 
 

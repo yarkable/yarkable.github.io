@@ -248,6 +248,10 @@ SVM 是常见的一种分类器，还有一种常见的就是 Softmax 了，记�
 
 
 
+![compare](https://i.loli.net/2019/11/16/BQtl8KA7TIhEVGL.png)
+
+
+
 ## reference
 
 

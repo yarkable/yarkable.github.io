@@ -74,6 +74,18 @@ passwd()
 
 ![生成密码](https://ae01.alicdn.com/kf/Hf770feb9fa0a40efb9c8bfa1861aee20S.jpg)
 
+
+
+然后复制 sha1 开头的这段字符，打开 `jupyter_notebook_config.py` 文件，找到下面这行，将其粘贴进去，像下面这样，然后保存，重启，就可以用密码登陆了
+
+
+
+```
+c.NotebookApp.password = u' sha1:-----' #这里就是上面的字符串
+```
+
+
+
 生成密码之后再登录的话就会要求输入密码，而不是 token 值，就像下面界面一样。
 
 ![密码登录界面](https://ae01.alicdn.com/kf/Hce40433a85374f31a9c581051473278fc.jpg)

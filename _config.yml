@@ -98,10 +98,10 @@ service-worker: true
 # Friends
 friends: [
     {
-        title: "",
-        href: "http://zhengwuyang.com"
+        # title: "",
+        # href: "http://zhengwuyang.com"
     },{
-        title: "PRIN BLOG",
-        href: "https://printempw.github.io"
+        # title: "PRIN BLOG",
+        # href: "https://printempw.github.io"
     }
 ]

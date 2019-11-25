@@ -97,6 +97,22 @@ tags:
 
 
 
+## 乌镇峰会种图
+
+
+
+直接 winhex 拖到最后拿到 flag
+
+
+
+![wz.jpg](https://i.loli.net/2019/11/25/kDKPZ8wcTqeRax4.jpg)
+
+
+
+>  flag: flag{97314e7864a8f62627b26f3f998c37f1}
+
+
+
 ## 基础破解
 
 
@@ -239,9 +255,57 @@ zip 包，提示加密的密码为 4 个数字，直接爆破，得到密码
 
 
 
-## 
+## snake TODO
 
 
+
+得到一张蛇的图片，拖进 binwalk 发现有个压缩包，用 foremost 分离出来
+
+
+
+
+
+
+
+提取压缩包中的文件，是一段 Base64 加密过的文本和一个二进制文件，解密 Base64 之后得到一段话
+
+
+
+``` 
+What is Nicki Minaj's favorite song that refers to snakes?
+```
+
+
+
+搜索这个人，然后就找到了她唱过 anaconda ，flag 应该就是这个，干，错了。然后看看文件夹中另外一个 cipher 文件，又不是二进制文件，用 file 命令看看是个数据文件
+
+
+
+![cipher.jpg](https://i.loli.net/2019/11/25/Jgwm54zoWpOKsUd.jpg)
+
+
+
+真的想不到能对它做什么，就去看了 wp ，擦，我傻了，思维定势，原来这里也牵扯到密码学的内容了，我们刚刚得到的 anaconda 就是 KEY ，是个公钥，cipher 是密文，因此应该要用某种解密方法去得到明文，
+
+
+
+![decry.jpg](https://i.loli.net/2019/11/25/ZliOfQE5ATLPnsz.jpg)
+
+
+
+## 小明的保险箱
+
+
+
+binwalk 分析，图片藏着一个压缩包，foremost 分离，压缩包加密，题目说了密码是 4 位数字，直接爆破
+
+
+
+![xm.jpg](https://i.loli.net/2019/11/25/6EIvm4zco3qpeVJ.jpg)
+
+
+
+> flag: flag{75a3d68bf071ee188c418ea6cf0bb043}
 
 
 
@@ -290,3 +354,50 @@ zip 包，提示加密的密码为 4 个数字，直接爆破，得到密码
 
 
 > flag: flag{385b87afc8671dee07550290d16a8071}
+
+
+
+## 爱因斯坦
+
+
+
+这张图拖到 binwalk 里面分析，藏着一个压缩包，foremost 分离，想解压，发现要密码，然后在图片的详情中找到了一个备注，开始我以为这真的不是密码，放进去试了一下，真就解开压缩包密码了。。直接拿到 flag
+
+
+
+![Einstein.jpg](https://i.loli.net/2019/11/25/ZXmKF8bGjDWcB7U.jpg)
+
+
+
+> flag: flag{dd22a92bf2cceb6c0cd0d6b83ff51606}
+
+
+
+## 隐藏的钥匙
+
+
+
+这题有点东西啊，开始把放进 winhex 没啥情况，再将图片拖进 binwalk，发现里面还藏着一张图片，用 foremost 分离，以为 flag 在第二张图片上面
+
+
+
+![key.jpg](https://i.loli.net/2019/11/25/oCkIwlt1N59jgRK.jpg)
+
+找了半天找不到 flag ，无奈看 wp ，淦，原来在第一张图片的 hex 部分直接可以找到 Base64 加密过的 flag ，怪我没仔细看，不过这也太坑了吧，那干嘛要搞两张图片出来啊！
+
+
+
+![base64](https://i.loli.net/2019/11/25/WN2VmAU7CMSsh1Y.png)
+
+
+
+> flag: flag{377cbadda1eca2f2f73d36277781f00a}
+
+
+
+## 荷兰宽带数据泄露
+
+
+
+
+

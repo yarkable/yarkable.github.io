@@ -155,6 +155,22 @@ zip 包，提示加密的密码为 4 个数字，直接爆破，得到密码
 
 
 
+## ningen
+
+
+
+常见的图片隐写题，在 winhex 中发现图片里面有 ningen.txt 字样
+
+
+
+猜测应该是隐藏了东西，将图片拖到 binwalk ，foremost 分离出一个加密的 zip 包，根据提示 zip 包的密码是 4 位数字，直接爆破得到 flag
+
+
+
+> flag: flag{b025fc9ca797a67d2103bfbc407a6d5f}
+
+
+
 ## 你竟然赶我走
 
 
@@ -188,6 +204,34 @@ zip 包，提示加密的密码为 4 个数字，直接爆破，得到密码
 
 
 > flag: flag{1773c5da790bd3caff38e3decd180eb7}
+
+
+
+## 假如给我三天光明
+
+
+
+得到一张图和一个加密过的压缩包，图片里面可以看到八个盲文
+
+
+
+![helen.jpg](https://i.loli.net/2019/11/25/QFvDJP43s6198bx.jpg)
+
+
+
+通过对应关系找到密码为 `kmdonowg` ，破解压缩包拿到一段音频，用 Audacity 打开，又是摩斯密码。。
+
+
+
+![monalisa.jpg](https://i.loli.net/2019/11/25/dZrW1uAkfeUzMvn.jpg)
+
+
+
+网上搜到一个[很牛逼的东西](https://morsecode.scphillips.com/labs/audio-decoder-adaptive/?tdsourcetag=s_pcqq_aiomsg)，将带有摩斯密码的音频直接拖进去就可以得到密码(题目好坑，最后的 flag 是小写的)
+
+
+
+> flag: flag{wpei08732?23dz}
 
 
 
@@ -396,6 +440,38 @@ binwalk 分析，图片藏着一个压缩包，foremost 分离，压缩包加密
 
 
 ## 荷兰宽带数据泄露
+
+
+
+这题直接给了个 `conf.bin` 文件，里面是二进制内容，打不开，又没有什么提示，宽带数据是啥，网上看 wp 才知道这是个路由器的配置文件，WTF ？？ 这是怎么知道的，好吧，做多了应该就知道了，用一款叫做 [RouterPassView](https://www.nirsoft.net/utils/router_password_recovery.html#DownloadLinks) 的软件可以打开这个 bin 文件，找到用户名和密码，这题一点 hint 也没有，都不知道提交的是啥，其实原题是有说提交的 flag 是配置中的 username 
+
+
+
+![helan.jpg](https://i.loli.net/2019/11/25/nJf7UVPG6p2kvwj.jpg)
+
+
+
+> flag: flag{053700357621}
+
+
+
+## 神秘龙卷风
+
+
+
+弱口令暴力破解压缩包，解压缩文件里面得到这样一段东西
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

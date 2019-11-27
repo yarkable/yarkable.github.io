@@ -113,6 +113,30 @@ tags:
 
 
 
+## LSB
+
+
+
+拖到 stegsolver 里面用 `Data Extract` 来提取最低位，发现藏着一张 png 图片
+
+
+
+![lsb.jpg](https://i.loli.net/2019/11/27/AmS4aW3uIdh1gOY.jpg)
+
+
+
+点击 `save bin` 保存为 png 格式，得到一张二维码，扫描得到 flag
+
+
+
+![image.png](https://i.loli.net/2019/11/27/vEG1uZcPF6SLyke.png)
+
+
+
+> flag: flag{1sb_i4_s0_Ea4y}
+
+
+
 ## 基础破解
 
 

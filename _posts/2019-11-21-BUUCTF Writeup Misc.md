@@ -463,6 +463,30 @@ binwalk 分析，图片藏着一个压缩包，foremost 分离，压缩包加密
 
 
 
+## 弱口令 TODO
+
+
+
+题目提示是弱口令，然后破解了好久没打开压缩包，看了网上的 wp ，擦，直接打开压缩包可以看到注释
+
+
+
+![ruokouling.jpg](https://i.loli.net/2019/11/27/nOIoZE5fW82vGgi.jpg)
+
+
+
+虽然啥都没有，但是复制到 sublime 里面就看到了点东西，摩斯密码在线解密得到密码为 `HELL0FORUM` 
+
+
+
+![ruokouling2.jpg](https://i.loli.net/2019/11/27/sUF7lr4KbjXgfJY.jpg)
+
+
+
+
+
+
+
 ## 荷兰宽带数据泄露
 
 

@@ -1,6 +1,6 @@
 ---
 layout:     post
-title:      BUUCTF Writeup  Misc
+title:      BUUCTF Writeup：Misc
 subtitle:   Continuous updating
 date:       2019-11-21
 author:     kevin

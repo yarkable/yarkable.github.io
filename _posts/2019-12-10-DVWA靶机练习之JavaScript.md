@@ -14,7 +14,7 @@ tags:
 
 
 
-## preface 
+## preface
 
 
 
@@ -60,11 +60,11 @@ tags:
 
 
 
-中级的 JavaScript 文件被放到了网页外面，同样直接打开，分析一波
+中级的 JavaScript 文件被放到了网页外面，同样直接打开，分析一波逻辑，也不难，直接就是在输入框内容的两边各加一个 `XX` 然后再逆序过来就是 token 的值，因此，token 就是 `XXsseccusXX`
 
 
 
-
+![js-logic.jpg](https://i.loli.net/2019/12/13/ie9WgYIpLcw5xNd.jpg)
 
 
 
@@ -72,5 +72,44 @@ tags:
 
 
 
+高级的例题也是将 js 放到了网页外面，然而打开之后，特别长一串，一看就是混淆过的
+
+
+
+![obfuscate.jpg](https://i.loli.net/2019/12/13/EIvOQKRCDtkq82o.jpg)
+
+
+
+然后就找去混淆的网站，发现没有啥能够完全去混淆的网站，都是去除了很多有用的信息，因此就找了网上的题解，找到了一个去 js 混淆的[网站](http://deobfuscatejavascript.com/)，将代码贴到网站上去混淆，这次终于可以了，下面是核心的代码
+
+
+
+![core-code.jpg](https://i.loli.net/2019/12/13/M3bFSmUtc5ekOT9.jpg)
+
+
+
+分析一下逻辑，有点奇怪，代码先是对 phrase 框进行清空，然后调用 `token_part_1("ABCD", 44)` 函数，这两个参数都没什么卵用，因为这个函数并没有用到这两个参数，所以只是将 phrase 框中的内容翻转过来而已，按照标准答案，phrase 里面是 `success` ，但是之前明明已经对 phrase 进行清空了，这里没想通。
+
+
+
+之后再调用 `token_part_2("XX")` 这个函数，也就是和上一步得到的 token 进行 sha256 加密，然后再点击按钮的时候调用 `token_part_3()` 这个函数，继续进行 sha256 加密，得到最终的 token 
+
+
+
+![high-solution.jpg](https://i.loli.net/2019/12/13/dtP2e8ZGf9KMmXJ.jpg)
+
+
+
+后来想了一下，反正题目的意思就是要在 phrase 中填入 `success` 并且发送正确的 token ，而且生成 token 的顺序也告诉我们了，那就不要就纠结太多，知道该怎么做就行了
+
+
+
 ## 不可能
 
+
+
+![impossible.jpg](https://i.loli.net/2019/12/13/8OrWaFRgemolE6H.jpg)
+
+
+
+永远不要相信用户的输入，所以只要有输入的地方就有漏洞，没有绝对的安全23333

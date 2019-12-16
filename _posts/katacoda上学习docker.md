@@ -61,7 +61,7 @@ $ apt-get update && apt-get install -y apache2
 $ apache2ctl -DFOREGROUND
 ```
 
-然后就可以在主机的 80 端口访问到 apache 服务器。此时，容器中的 apache 进程在前台执行，占用了一个命令行界面，要关闭的话直接按 `Ctrl+C` ，然后退出 ubuntu 容器按 `Ctrl+D` ，不过，这样的话，虽然容器停止了，但它在磁盘上还是存在着，可以用 `ps` 命令来查看
+然后就可以在主机的 80 端口访问到 apache 服务器。此时，容器中的 apache 进程在前台执行，占用了一个命令行界面，要关闭的话直接按 `Ctrl+C` ，然后退出 ubuntu 容器按 `Ctrl+D` ，不过，这样的话，虽然容器停止了，但它在磁盘上还是存在着，可以用 `ps` 命令来查看，不带任何参数的 `ps` 只列出正在运行的容器，参数 `-a` 或者 `--all` 会将所有的容器都列出来
 
 ```bash
 $ docker ps -a
@@ -79,5 +79,30 @@ $ docker rm $(docker ps -aq)
 
 
 
+首先去找现有的镜像，直接用 `search` 命令可以在 DockerHub 上找到想要的镜像，可以直接搜索作者的名字
+
+```bash
+$ docker search loodse
+```
+
+![docker-search-name.jpg](https://i.loli.net/2019/12/16/6KwD9OuWTm2lrdE.jpg)
+
+也可以直接搜索镜像的名字，比如 nginx 
+
+```bash
+$ docker search nginx
+```
+
+这样就会列出 DockerHub 上所有关于 nginx 的仓库，以及 star 数，注意镜像是以 `作者/程序` 的格式命名的，如果没有作者的话就说明这是官方的镜像
+
+![docker-search-repo.jpg](https://i.loli.net/2019/12/16/g6PCEbSriGfeBc1.jpg)
 
 
+
+找到之后我们就把镜像给拉取到本地，用 `pull` 命令
+
+```bash
+$ docker pull loodse/demo-www
+```
+
+![docker-pull.jpg](https://i.loli.net/2019/12/16/E6liypkTF8CmIj5.jpg)

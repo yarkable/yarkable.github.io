@@ -56,7 +56,7 @@ docker: Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is t
 
 
 ```bash
-sudo apt remove docker-ce
+$ sudo apt remove docker-ce
 Reading package lists... Done
 Building dependency tree
 Reading state information... Done

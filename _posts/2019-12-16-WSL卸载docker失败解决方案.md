@@ -1,3 +1,19 @@
+---
+layout:     post
+title:      WSL卸载docker失败解决方案
+subtitle:   
+date:       2019-12-16
+author:     kevin
+header-img: img/green-bg.jpg
+catalog: true
+tags:
+    - linux
+    - docker
+    - troubleshoot
+---
+
+
+
 ## preface
 
 

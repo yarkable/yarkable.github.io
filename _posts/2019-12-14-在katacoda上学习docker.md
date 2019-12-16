@@ -208,7 +208,7 @@ $ docker attach counter1
 $ docker run -it debian
 ```
 
-然后我们在 debian 容器中安装 apache 服务器（由于某些原因，在 docker 中 用 apt install 的话一定要加上 -y 选项）
+然后我们在 debian 容器中安装 apache 服务器（很多情况下，在 docker 中 用 apt install 的话一定要加上 -y 选项）
 
 ```bash
 $ apt-get update && apt-get install apache2 -y
@@ -265,4 +265,22 @@ $ docker run -it webserver
 ```
 
 ![docker-tag-2.jpg](https://i.loli.net/2019/12/16/RZhxnleSCMY24Ud.jpg)
+
+
+
+## 用 Dockerfile 来构建镜像
+
+
+
+做 ctf  web 题的时候，就有很多出题人会在赛后将 web 题以 Dockerfile 的形式发布出来，复现题目，所以看懂 Dockerfile 是挺重要的，并且还得学会怎么写 Dockerfile
+
+
+
+我们现在自己来用 Dockerfile 搭建一个镜像，先来看看我们的 Dockerfile 里的内容
+
+```dockerfile
+FROM ubuntu:18.04
+RUN apt-get update && apt-get install apache2 -y && apt-get clean
+CMD ["apache2ctl", "-DFOREGROUND"]
+```
 

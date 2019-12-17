@@ -472,6 +472,71 @@ $ docker logs redis
 
 
 
+上面说到了，如果 docker 容器中的端口想要被暴露在外面的话，必须要做端口映射，用 `-p` 或者 `-P` ，其中 `-P` 后面不需要加上参数，会随机选择一个端口进行映射
+
+```bash
+$ docker run -d -P --name myweb nginx
+```
+
+可以用 `docker ps` 查看端口转发情况，也可以直接输入 `port` 命令查看
+
+```bash
+$ docker port myweb
+80/tcp -> 0.0.0.0:32768
+```
+
+可以看到 docker 容器的 80 端口被转发到了主机的 32768 端口上，也可以用 [play-with-docker](https://labs.play-with-docker.com) 环境进行可视化
+
+![docker-network.jpg](https://i.loli.net/2019/12/17/2WzCJb8fTZhKpeB.jpg)
+
+
+
+我们还可以查看 docker 容器的 ip 地址（ go format 去网上找找就行了，不想学==）
+
+```bash
+$ docker inspect --format '{{ .NetworkSettings.IPAddress }}' myweb
+172.17.0.2
+```
+
+甚至可以 ping 一下容器来检查网络连通性
+
+```bash
+$ ping $(docker inspect --format '{{ .NetworkSettings.IPAddress }}' myweb1)
+```
+
+
+
+默认情况下，如果不对容器的网络做设置的话，容器用的是桥接网络，用 `--net` 来指定网络模式
+
+| param     | meaning                  |
+| --------- | ------------------------ |
+| bridge    | 桥接模式                 |
+| host      | 共享宿主网络             |
+| none      | 没有网络配置             |
+| container | 使用另一个容器的网络配置 |
+
+
+
+我们现在创建一个不能联网的 ubuntu 容器
+
+```bash
+$ docker run -it --net none --name net-off ubuntu
+```
+
+然后这就是一台不能上网的弟弟
+
+![docker-ubuntu-net-off.jpg](https://i.loli.net/2019/12/17/MSVh5iL1CKaNgA9.jpg)
+
+
+
+或者使用另一个 docker 容器的网络配置，具体的这些模式的意义在这里就先不介绍了，我自己也还没搞太清晰
+
+```bash
+$ docker run --net container:AnotherContainer --name secondarycontainer -d ubuntu
+```
+
+
+
 ## 使用 volume 存储数据
 
 
@@ -490,7 +555,7 @@ $ docker run -v /host-data:/data -it ubuntu
 
 ![docker-volume-docker.jpg](https://i.loli.net/2019/12/17/hHOYWDFc7STjBXt.jpg)
 
-不过默认情况下 docker 对宿主机的共享文件是由读写权限的，为了防止 docker 修改主机文件，我们可以对 docker 使用 `readonly` 选项
+不过默认情况下 docker 对宿主机的共享件是由读写权限的，为了防止 docker 修改主机文件，我们可以对 docker 使用 `readonly` 选项
 
 ```bash
 $ docker run -v /host-data:/data:ro ubuntu
@@ -499,4 +564,3 @@ $ docker run -v /host-data:/data:ro ubuntu
 这样的话就不能够对宿主机共享的文件进行写入操作了
 
 ![docker-readonly.jpg](https://i.loli.net/2019/12/17/xYOJ6hV4KsIZpvz.jpg)
-

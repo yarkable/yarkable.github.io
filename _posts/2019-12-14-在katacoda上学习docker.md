@@ -17,7 +17,9 @@ tags:
 
 
 
-Dockerfile 部分用的是在线 docker，
+早就知道 docker 很重要了，但是网上很多 docker 教程都讲的不清楚，doker 是啥，docker 能干啥，为什么要 docker，怎么用 docker，偶然的机会才知道了[这个网站](https://www.katacoda.com/loodse/courses/docker/docker-16-volumes)真是太棒了，循序渐进，又配有在线的 docker 环境，十分适合学习。
+
+[另外一个网站](https://labs.play-with-docker.com)也有提供在线的 docker 环境，这个更牛逼，还可以直接访问云主机的端口，适合测试搭建 web 服务，一个 docker 容器能使用 4 个小时，过期了就重新申请，速度十分快，用于学习来说的话已经足够了，我主要就是通过这两个网站来学习 docker 知识的
 
 
 
@@ -332,33 +334,56 @@ $ docker run -p -d 8080:80 --name www webserver
 
 ![docker-apache.jpg](https://i.loli.net/2019/12/17/pOFl3EWydnabrzh.jpg)
 
-光有默认页面还不行，在 ctf 出题人做 docker 镜像的时候还会把自己写的文件给拷贝进去，接下来我们就来做这件事。我们在当前文件夹新建一个文件夹叫做 `html` ，
+光有默认页面还不行，在 ctf 出题人做 docker 镜像的时候还会把自己写的文件给拷贝进去，接下来我们就来做这件事。我们在当前文件夹新建一个文件夹叫做 `html` ，在 `html` 文件夹中写入一个文件 `index.html` 
 
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>This is a title</title>
+  </head>
+  <body>
+    <p>Hello world!</p>
+  </body>
+</html>
+```
 
+更新一下刚刚的 Dockerfile 文件
 
+```dockerfile
+FROM ubuntu:18.04
+RUN apt-get update && apt-get install apache2 -y && apt-get clean
+COPY html /var/www/html
+CMD ["apache2ctl", "-DFOREGROUND"]
+```
 
+这里的 `COPY` 命令就是说将 `html` 文件夹中的内容拷贝到 docker 容器的 `/var/www/html` 里面，因为这是 apache 服务器的根目录。我们来重新构建一下这个镜像
 
-待定
+```bash
+$ docker build -t webserver .
+```
 
+运行容器并将其 apache 端口映射为主机的 8090 端口(8080 被刚刚的容器占用了)
 
+```bash
+$ docker run -d -p 8090:80 --name www1 webserver
+```
 
+然后浏览器打开主机的 8090 端口就可以访问到我们自定的 `index.html` ，或者也可以用 curl 这个牛逼的工具
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```bash
+[node1] (local) root@192.168.0.8 ~
+$ curl localhost:4567
+<!DOCTYPE html>
+<html>
+  <head>
+      <title>This is a title</title>
+  </head>
+  <body>
+  	<p>Hello world!</p>
+  </body>
+</html>
+```
 
 
 
@@ -410,4 +435,68 @@ cmd.sh
 ```
 
 
+
+## 管理 docker 日志
+
+
+
+这部分没啥好讲的，就是 docker 容器在运行的过程中会产生日志文件，日志一多的话就会造成空间浪费，因此我们在运行容器的时候可以加上 `--log-driver` 参数选择日志驱动的类别
+
+
+
+这是选择使用 syslog 来作为日志分类，syslog 会被系统集中管理，是个不错的选择
+
+```bash
+$ docker run -d --name redis-syslog --log-driver=syslog redis
+```
+
+当然，也可以选择不要日志输出，这样就没有日志文件
+
+```bash
+$ docker run -d --name redis-none --log-driver=none redis
+```
+
+可以使用 `logs` 命令来查看容器的日志
+
+```bash
+$ docker logs redis
+```
+
+
+
+不过 `--log-driver` ~~这个选项好像只有在类 Unix 系统才能使用，我在 Windows 上使用会报错~~，很多人都报错，网上没找到原因
+
+
+
+## docker 网络基础
+
+
+
+## 使用 volume 存储数据
+
+
+
+在 `docker run` 后面加上参数 `-v` 可以指定一个主机的一个 volume 和 docker 容器的一个 volume ，使得两者可以共享文件。我们先来创造一下环境
+
+![docker-volume.jpg](https://i.loli.net/2019/12/17/enjvVUw7XrKhZSE.jpg)
+
+现在我要让 docker 能够访问宿主机上的 `/host-data` 里面的内容，输入以下内容
+
+```bash
+$ docker run -v /host-data:/data -it ubuntu
+```
+
+然后我们进入 docker 容器中，可以看到容器的 `/data` 文件夹中能够访问到宿主机的共享文件
+
+![docker-volume-docker.jpg](https://i.loli.net/2019/12/17/hHOYWDFc7STjBXt.jpg)
+
+不过默认情况下 docker 对宿主机的共享文件是由读写权限的，为了防止 docker 修改主机文件，我们可以对 docker 使用 `readonly` 选项
+
+```bash
+$ docker run -v /host-data:/data:ro ubuntu
+```
+
+这样的话就不能够对宿主机共享的文件进行写入操作了
+
+![docker-readonly.jpg](https://i.loli.net/2019/12/17/xYOJ6hV4KsIZpvz.jpg)
 

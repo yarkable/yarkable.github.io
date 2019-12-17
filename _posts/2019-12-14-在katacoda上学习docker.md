@@ -13,6 +13,14 @@ tags:
 
 
 
+## praface 
+
+
+
+Dockerfile 部分用的是在线 docker，
+
+
+
 ## 运行一个容器
 
 
@@ -276,11 +284,130 @@ $ docker run -it webserver
 
 
 
-我们现在自己来用 Dockerfile 搭建一个镜像，先来看看我们的 Dockerfile 里的内容
+我们现在自己来用 Dockerfile 搭建一个镜像，先来看看我们要写入的 Dockerfile 里的内容
 
 ```dockerfile
 FROM ubuntu:18.04
 RUN apt-get update && apt-get install apache2 -y && apt-get clean
 CMD ["apache2ctl", "-DFOREGROUND"]
 ```
+
+
+
+来看看里面这些东西是啥意思
+
+| command | meaning                                                      |
+| ------- | ------------------------------------------------------------ |
+| FROM    | 选择的镜像，默认是 latest 分支，想指定分支的话用 `:` 后加分支名称 |
+| RUN     | 表示要执行的命令，不能有交互式的命令，因为在镜像构建的过程中无法用 stdin |
+| CMD     | 表示执行的命令，有多个命令参数就用一个列表隔开来             |
+
+
+
+然后我们就新建一个 Dockerfile 文件，注意 D 是大写的，把上面的东西写进去，有点像 Makefile 的感觉，反正就这样，我们在当前目录下输入下面这行命令
+
+```bash
+$ docker build -t webserver .
+```
+
+这行命令就是从 Dockerfile 创建镜像的命令，其中 `-t` 代表 tag，后面接的参数是镜像的名字或者标签，这里只给了名字，也可以叫做 `kevin/webserver:1.0` ，最后的 `.` 是代表从当前目录中寻找 Dockerfile 进行构建。
+
+
+
+输入构建命令之后，docker 就按照我们的要求进行构建工作，他会按照我们 DOckerfile 里面的步骤来进行构建，会有 step1，step2，step3，因此最好将同一类的命令（例如 apt-get install）放在一行中写完，不然构建的效率会变低
+
+![dockerfile.jpg](https://i.loli.net/2019/12/17/iRwQW8KEcsYLOVk.jpg)
+
+构建完成后，我们就会多出一个镜像，这就是我们刚刚构建好的镜像
+
+![dockerfile-2.jpg](https://i.loli.net/2019/12/17/DATQrlsK7ExFehN.jpg)
+
+那我我们来运行一个这个镜像，他里面装的是 ubuntu 的 apache ，web 服务器默认是 80 端口，因此将他映射到主机的 8080 端口进行访问
+
+```bash
+$ docker run -p -d 8080:80 --name www webserver
+```
+
+可以看到，端口映射成功，我们能够访问到 apache 的默认页面
+
+![docker-apache.jpg](https://i.loli.net/2019/12/17/pOFl3EWydnabrzh.jpg)
+
+光有默认页面还不行，在 ctf 出题人做 docker 镜像的时候还会把自己写的文件给拷贝进去，接下来我们就来做这件事。我们在当前文件夹新建一个文件夹叫做 `html` ，
+
+
+
+
+
+待定
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 用 .dockerignore 忽略不要的文件
+
+
+
+举个例子，当前目录下有一个 Dockerfile 文件，除了必要的文件外有一个机密文件和一个巨大的文件
+
+```bash
+$ ls 
+cmd.sh	Dockerfile	password.txt	largefile.img
+```
+
+构建的过程中，我们的 Dockerfile 如果这样写的话会出现什么问题呢？（`ADD` 的作用和 `COPY` 类似，都是将宿主机目录下的文件传到 docker 容器对应的目录）
+
+```dockerfile
+FROM alpine
+ADD . /app
+COPY cmd.sh /cmd.sh
+CMD ["sh", "-c", "/cmd.sh"]
+```
+
+没错，本地的敏感文件也会被传到镜像中，这样就可以引发安全问题，并且有些很大的我们完全不需要用到的文件也会被传进去，导致镜像的体积变得很大
+
+```bash
+$ docker build -t withpassword .
+$ docker run withpassword ls /app
+cmd.sh
+Dockerfile
+password.txt
+largefile.img
+```
+
+为了解决这种情况，我们可以像 git 一样创建一个 `.dockerignore` 文件，将我们不想传递的文件给添加进去，这样就不会被传到镜像中
+
+```bash
+$ echo password.txtpassword.txt >> .dockerignore
+$ echo largefile.img >> .dockerignore
+```
+
+这样子创建出来的镜像就不包含本地的敏感文件以及无关的文件
+
+```bash
+$ docker build -t no-passwd-no-large-file .
+$ docker run no-passwd-no-large-file ls /app
+Dockerfile
+cmd.sh
+```
+
+
 

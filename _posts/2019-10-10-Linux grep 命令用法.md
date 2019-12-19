@@ -1,6 +1,6 @@
 ---
 layout:     post
-title:      Learn Linux Command [grep]
+title:      Linux grep 命令用法
 subtitle:   Grep is your friend
 date:       2019-10-10
 author:     kevin

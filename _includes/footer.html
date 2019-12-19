@@ -105,8 +105,30 @@
                 <p class="copyright text-muted">
                 <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span>次</span>
                 <span class="post-meta-divider">|</span>
-                <span id="busuanzi_container_site_uv">当前访客数<span id="busuanzi_value_site_uv"</span>人</span>
+                <span id="busuanzi_container_site_uv">当前访客数<span id="busuanzi_value_site_uv"></span>人</span>
                 </p>
+
+                <p id="span_total_time"></p>
+                <script type="text/javascript">
+                function runtime(){
+                // 初始时间，日/月/年 时:分:秒
+                X = new Date("03/18/2019 18:00:00");
+                Y = new Date();
+                T = (Y.getTime()-X.getTime());
+                M = 24*60*60*1000;
+                a = T/M;
+                A = Math.floor(a);
+                b = (a-A)*24;
+                B = Math.floor(b);
+                c = (b-B)*60;
+                C = Math.floor((b-B)*60);
+                D = Math.floor((c-C)*60);
+                //信息写入到DIV中
+                span_total_time.innerHTML = "我的小站已经连续运行了 "+A+"天"+B+"小时"+C+"分"+D+"秒"
+                }
+                setInterval(runtime, 1000);                
+                </script>
+
             </div>
         </div>
     </div>

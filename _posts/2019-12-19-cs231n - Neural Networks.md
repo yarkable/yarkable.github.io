@@ -101,3 +101,24 @@ tags:
 
 
 
+上面讲的这些都是 Scalar 实数的求反向传播方法，要是各节点是个向量的话其实也是一样的，方法还是那样，只不过要注意的是求出来的导数的维度要和之前的向量的维度保持一致，不然就会出错，所以向量这里的话没有什么公式，一般是在纸上写一下各向量的维度信息然后进行推导一下代码应该怎样写
+
+```python
+# forward pass
+W = np.random.randn(5, 10)
+X = np.random.randn(10, 3)
+D = W.dot(X)
+
+# now suppose we had the gradient on D from above in the circuit
+dD = np.random.randn(*D.shape) # same shape as D
+dW = dD.dot(X.T) #.T gives the transpose of the matrix
+dX = W.T.dot(dD)
+```
+
+
+
+> 提示：使用尺寸分析！ 请注意，您无需记住dW和dX的表达式，因为它们很容易根据尺寸进行推导。 例如，我们知道权重dW的梯度在计算后必须与W大小相同，并且它必须取决于X和dD的矩阵相乘（当X，W均为单数时就是这种情况） 而不是矩阵）。 始终只有一种方法可以实现这一目标，从而确定尺寸。 例如，X的大小为[10 x 3]，dD的大小为[5 x 3]，因此，如果我们希望dW且W的形状为[5 x 10]，则实现此目的的唯一方法是dD.dot（ XT），如上所示。
+
+
+
+不过 PPT 里关于向量反向传播倒是扯得很复杂，甚至还提到了雅可比矩阵，后面看了一下下一篇文章才发现没有这么恐怖，也就是跟 Scalar 是一样的原理

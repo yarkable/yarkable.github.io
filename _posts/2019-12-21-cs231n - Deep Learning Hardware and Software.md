@@ -1,5 +1,5 @@
 ---
-: post
+layout: post
 title: cs231n - Deep Learning Hardware and Software
 subtitle: CPUs, GPUs, TPUs, PyTorch, TensorFlow
 date: 2019-12-21

@@ -2,7 +2,7 @@
 layout: post
 title: cs231n - Convolutional Neural Network
 subtitle:
-date: 2019-11-09
+date: 2019-12-19
 author: kevin
 header-img: img/green-bg.jpg
 catalog: true

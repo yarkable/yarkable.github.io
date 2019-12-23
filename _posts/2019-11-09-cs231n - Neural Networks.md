@@ -2,7 +2,7 @@
 layout: post
 title: cs231n - Neural Networks
 subtitle: Introduction to Neural Networks [slides]
-date: 2019-12-19
+date: 2019-11-09
 author: kevin
 header-img: img/green-bg.jpg
 catalog: true

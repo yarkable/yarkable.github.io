@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Jekyll 渲染 LaTeX 数学公式
-subtitle: 以及 LaTeX 数学公式基本语法
+subtitle: 
 date: 2019-12-24
 author: kevin
 header-img: img/green-bg.jpg

@@ -105,3 +105,6 @@ friends: [
         # href: "https://printempw.github.io"
     }
 ]
+
+# markdown LaTeX
+markdown: kramdown

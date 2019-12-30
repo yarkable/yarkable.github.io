@@ -100,7 +100,7 @@ default-storage-engine=INNODB
 
 
 
-然后我们要让他能够解释 php 文件，我们是用 php-cgi 来作为解释器的，大概就是让 php-cgi 监听 9000 端口，将 php 文件传入 php-cgi 然后将解释过的内容渲染在浏览器上。在 `nginx-1.16.1/conf/nginc.conf` 的第 43 行，加上 `index.php` 作为默认网页：
+然后我们要让他能够解释 php 文件，我们是用 php-cgi 来作为解释器的，大概就是让 php-cgi 监听 9000 端口，将 php 文件传入 php-cgi 然后将解释过的内容渲染在浏览器上。在 `nginx-1.16.1/conf/nginx.conf` 的第 43 行，加上 `index.php` 作为默认网页：
 
 
 

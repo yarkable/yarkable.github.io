@@ -15,7 +15,7 @@ tags:
 
 
 
-## preface 
+## preface
 
 
 
@@ -271,65 +271,34 @@ include        fastcgi.conf;
 
 
 
+Linux 下的 MySQL 好像不用怎么动，安装完就直接能够和 php 进行连接，只要保证打开了 MySQL 服务就行，测试一下，ok，一次通过
+
+![sqli-labs](https://i.loli.net/2019/12/31/15IBWhD9jJv8qdG.png)
 
 
 
+## 开机自启动
 
 
 
-## 编写 bat 脚本
+一般用 systemctl 就可以了
 
+```bash
+root@kali:/var/www/html# systemctl enable nginx.service 
 
+root@kali:/var/www/html# systemctl enable php7.3-fpm.service 
 
-上面这些命令太麻烦了，在 Windows 上敲命令真是件不愉快的事情，因此我们可以将这些命令集合成一个脚本，每次只要运行一下脚本就运行了所有命令！
+root@kali:/var/www/html# systemctl enable mysql
 
-
-
-下载 [RunHiddenConsole](https://redmine.lighttpd.net/attachments/660/RunHiddenConsole.zip) ，顾名思义，这个玩意会将跑程序的终端隐藏起来，像 php 和 php-cgi 等程序开启之后一直挂在那里，我们不能用那个终端干其他事，就很烦，然后我们可以在 windows 上用这个将他们隐藏起来。下载 RunHiddenConsole 后将它解压在 nginx 的安装文件中
-
-
-
-![nginx2.jpg](https://i.loli.net/2019/11/15/aRQ3Ui7CfST2ykr.jpg)
-
-
-
-在当前目录编写启动脚本 `start_nginx.bat` ：
-
-
-
-```shell
-@echo off
-REM Windows 下无效
-REM set PHP_FCGI_CHILDREN=5
-
-REM 每个进程处理的最大请求数，或设置为 Windows 环境变量
-set PHP_FCGI_MAX_REQUESTS=1000
-
-echo Starting PHP FastCGI...
-RunHiddenConsole F:\php-7.2.24-Win32-VC15-x64\php-cgi.exe -b 127.0.0.1:9000 -c F:\php-7.2.24-Win32-VC15-x64\php.ini
-
-echo Starting nginx...
-RunHiddenConsole F:\nginx-1.16.1\nginx.exe
 ```
 
 
 
-再编写一个 `kill_nginx.bat` ：
+## summary
 
 
 
-```shell
-@echo off
-echo Stopping nginx...
-taskkill /F /IM nginx.exe > nul
-echo Stopping PHP FastCGI...
-taskkill /F /IM php-cgi.exe > nul
-exit
-```
-
-
-
-以后双击两下 `start_nginx.bat` 就打开了服务，双击 `kill_nginx.bat` 就将服务给关闭了，很方便，不用自己再去开那么多命令行窗口手动敲命令了！
+感觉 php 还是和 apache 配合更加方便，php 都集成了 apache 的模块，都不用怎么配置了，在 nginx 上要多些配置的步骤，不想折腾的话还是用 apache 吧，而且 ctf 靶机还有些题目专门用的是 apache 的漏洞，不过 nginx 的好处就是可以反向代理和负载均衡，这个有机会我之后再写一下。还有一个就是，搭建 ctf 靶机环境的时候最好还是用集成环境吧，多版本 php 随便切换，不存在说哪一关不能通过的现象
 
 
 

@@ -1,5 +1,5 @@
 ---
-![1578130656386.png](https://i.loli.net/2020/01/04/6Bl2AuzxXMOmSo1.png)![1578130520986.png](https://i.loli.net/2020/01/04/jhYCoxwXWJQTI9r.png)![1578127478997.png](https://i.loli.net/2020/01/04/tlqJf8zY6VcjPuC.png)layout: post
+layout: post
 title: sqli-labs Lesson-1 字符型注入
 subtitle: 
 date: 2020-01-03

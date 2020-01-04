@@ -131,9 +131,8 @@ ok，这张表所在的数据库的名字是 security，知道数据库的名字
 
 可以像这样一个一个查询，查完之后换一个函数继续查，但是效率不高
 
-```sql
+```
 1' and 1=2 union select 1, @@datadir, version() --+ 
-...
 1' and 1=2 union select 1, @@version_compile_os, user() --+ 
 ```
 

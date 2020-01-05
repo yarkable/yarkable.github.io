@@ -1,7 +1,7 @@
 ---
 layout: post
 title: sqli-labs Lesson-2 数字型注入
-subtitle: 
+subtitle: Lesson-3和Lesson-4也在这里
 date: 2020-01-03
 author: kevin
 header-img: img/green-bg.jpg
@@ -59,3 +59,7 @@ near '''' LIMIT 0,1' at line 1
 
 
 其余的步骤都大同小异，看我[第一关的过关步骤](https://szukevin.site/2020/01/03/sqli-labs-Lesson-1-%E5%AD%97%E7%AC%A6%E5%9E%8B%E6%B3%A8%E5%85%A5/)就行了
+
+
+
+第三关和第四关和这也是一样的，就是多了个括号然后单引号变成双引号而已，只要把他们闭合就行

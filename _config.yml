@@ -98,8 +98,8 @@ service-worker: true
 # Friends
 friends: [
     {
-        # title: "",
-        # href: "http://zhengwuyang.com"
+        # title: "萌歪小博客",
+        # href: "http://www.moeyy.cn/"
     },{
         # title: "PRIN BLOG",
         # href: "https://printempw.github.io"

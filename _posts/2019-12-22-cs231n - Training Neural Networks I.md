@@ -86,6 +86,16 @@ pic
 
 
 
+relu(Rectified Linear Unit) 是非线性修正单元的缩写，公式是 $relu = max(0, x)$，图像如下
+
+
+
+pic
+
+ 
+
+他就解决了
+
 
 
 

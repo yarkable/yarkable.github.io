@@ -45,7 +45,7 @@ sigmoid 函数的方程表达式这样的： $\sigma(x) = 1 / (1 + e^{-x})$  ，
 
 
 
-pic
+![sigmoid](https://i.loli.net/2020/01/14/L7PoGxmSc9jbiz6.png)
 
 
 
@@ -53,7 +53,7 @@ pic
 
 1. sigmoid 函数在输入非常大或非常小的时候会出现饱和现象，也就是说函数对输入的改变变得很不敏感，此时函数特别平，导数为 0，意味着反向传播时梯度接近于 0，这样权重基本不会更新，会造成梯度消失的情况从而无法完成深层网络的训练
 
-pic
+![sigmoid-gate](https://i.loli.net/2020/01/14/CD73n6csl2kZzd9.jpg)
 
 
 
@@ -74,7 +74,7 @@ tanh 函数的公式是 $\tanh = \frac{\sinh x}{conh x} = \frac{e^x - e^{-x}}{e^
 
 
 
-pic
+![tanh](https://i.loli.net/2020/01/14/9fnBjCR35ZdMQLx.png)
 
 
 
@@ -82,19 +82,53 @@ pic
 
 
 
-### Relu
+### ReLU
 
 
 
-relu(Rectified Linear Unit) 是非线性修正单元的缩写，公式是 $relu = max(0, x)$，图像如下
+ReLU(Rectified Linear Unit) 是非线性修正单元的缩写，公式是 $relu = max(0, x)$，图像如下
 
 
 
-pic
+![relu](https://i.loli.net/2020/01/14/QXbo4SJdOmhsvHM.png)
 
  
 
-他就解决了
+ReLU 不会出现梯度饱和以及梯度消失的问题，但是他的输出也不是零均值的，同时 ReLU 可能产生 Dead ReLU 情况，也就是在 x < 0 的时候，梯度变成 0，导致这个神经元以及之后的神经元梯度一直为 0 ，不再对任何数据有反应，导致相应的参数永远不会被更新，解决这种情况就得在初始化的时候将学习率降低
+
+
+
+### Leaky ReLU
+
+
+
+Leaky ReLU 就在 ReLU 的基础上更新了一下，公式为 $Leaky relu = max(0.01, x)$ ，图像如下
+
+
+
+![leaky-relu](https://i.loli.net/2020/01/14/2kwqZWIf9JNjmEp.png)
+
+
+
+Leaky ReLU 解决了 Dead ReLU 的现象，用一个非常小的值来初始化神经元，使得 ReLU 在负数区更偏向于激活而不是 Dead 
+
+
+
+### Maxout 
+
+
+
+关于 Maxout 可以看[这篇文章](https://zhuanlan.zhihu.com/p/92412922)，Maxout 并没有一个具体的函数表达式，他的思路就是用一个隐层来作为激活函数，隐层的神经元的个数可以由人为指定，是个超参数，但是缺点也很明显，加大了参数量以及计算量，并且还需要反向传播更新自身的权重系数
+
+
+
+## Data Processing
+
+
+
+
+
+
 
 
 
@@ -106,7 +140,7 @@ pic
 
 https://blog.csdn.net/weixin_41770169/article/details/81561159
 
-
+https://zhuanlan.zhihu.com/p/92412922
 
 
 

@@ -138,11 +138,11 @@ Leaky ReLU 解决了 Dead ReLU 的现象，用一个非常小的值来初始化�
 
 
 
-https://blog.csdn.net/weixin_41770169/article/details/81561159
-
 https://zhuanlan.zhihu.com/p/92412922
 
+https://blog.csdn.net/weixin_41770169/article/details/81561159
 
+https://www.youtube.com/watch?v=wEoyxE0GP2M&list=PLC1qU-LWwrF64f4QKQT-Vg5Wr4qEE1Zxk&index=6
 
 
 

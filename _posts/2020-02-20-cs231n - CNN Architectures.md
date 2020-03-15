@@ -8,7 +8,7 @@ header-img: img/green-bg.jpg
 catalog: true
 tags:
     - reading notes
-	- deep learning
+    - deep learning
 ---
 
 

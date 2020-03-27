@@ -80,3 +80,30 @@ plt.show()
 
 
 
+
+
+## 设置坐标轴
+
+
+
+
+
+
+
+## 多图合并
+
+
+
+### subplot
+
+
+
+
+
+## reference
+
+
+
+
+
+https://morvanzhou.github.io/tutorials/data-manipulation/plt/

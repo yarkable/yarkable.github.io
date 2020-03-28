@@ -8,6 +8,7 @@ header-img: img/green-bg.jpg
 catalog: true
 tags:
     - blog
+    - computer network
 ---
 
 
@@ -164,4 +165,41 @@ xx.github.io 解析到的 ip 都是后面四个，这是 GitHub page 的服务�
 
 
 
-完事之后
+完事之后关于域名要注意一些事项，由于我们已经将 DNS 服务器改成 Cloudflare 的 DNS，所以之前解析过的域名都无效了，需要在 Cloudflare 里面重新进行域名解析，不能在之前的域名提供商那里进行解析，要在 Cloudflare 的 DNS 选项卡里面进行解析。
+
+
+
+这里给出我自己的解析表，顺便说说里面的 **Proxy status** 代表的含义。可以看到我一级域名是直接解析到 GitHub page 的，所以状态为 **Proxied** ，表示经过 Cloudflare 代理访问以达到 CDN 加速和伪装 ip 的功能。有几个二级域名解析到了公网，是我用来做实验的，并没有网站架设在服务器上，所以我不需要 Cloudflare 代理，只要它提供 DNS 解析的功能就行了，所以状态是 **DNS only** 。还有几个二级域名解析到了内网，同样是我拿来做实验的，我只需要 DNS 服务器解析域名就行了，但是由于 ip 不是公网，无法直接访问，涉及到端口转发等概念，因此状态为 **DNS only - reserved IP** （reserved IP 就是局域网 ip 的意思）
+
+
+
+![status](https://i.loli.net/2020/03/28/kJibEgpjeYxNlsK.jpg)
+
+
+
+---
+
+
+
+假设我们将 aliyun 这个二级域名的状态变成 **Proxied** ，会发生什么呢，名场面，相信很多人都见过，一看图就明白了，Cloudflare 代理了浏览器对 aliyun.szukevin.site 解析到的公网地址的访问，但是由于我这台公网服务器的 80 端口没有假设网站，所以 Cloudflare 到服务器这条路不同，而浏览器客户端到 Cloudflare 是连通的
+
+
+
+![proxy-error](https://i.loli.net/2020/03/28/35PavW2merDzxVO.jpg)
+
+
+
+如果只是 **DNS only** 的话就会显示网站访问失败，因为这个服务器上确实没有网站，这就没有经过 Cloudflare 的代理直接到达网站真实 ip 地址。然后还有个点，由于我们强制用了 HTTPS ，上面 **Proxied** 的状态时因为用了 Cloudflare 的服务，所以访问域名时即使出错了也是用 HTTPS 加密的，而 **DNS only** 就只有不安全的 HTTP 通信了
+
+
+
+![non-proxy](https://i.loli.net/2020/03/28/puwdPzexSD896vi.jpg)
+
+
+
+我还发现用 Cloudflare 解析记录的话挺慢的吧，有时候可能过个几分钟才解析生效，看是否生效就在命令行 ping 一下域名吧，一个很神奇的事，WSL 在 ping 的时候经常会报错找不到域名，而用 windows 自带的 powershell 去 ping 就能够很快知道 ip 地址
+
+
+
+![ping-domain](https://i.loli.net/2020/03/28/4ZlUSh2BbVa6o5t.jpg)
+

@@ -106,6 +106,19 @@ google.com, pub-85592543xxx4365, DIRECT, f08c47fec094xxx0
 
 保存之后就生成了一段 js 代码，复制到网站的  `_post.html`  (每种博客模板的文件名可能不一样)，然后下次别人来访问网站就能够看到展示的广告了。
 
+```html
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<ins class="adsbygoogle"
+     style="display:block; text-align:center;"
+     data-ad-layout="in-article"
+     data-ad-format="fluid"
+     data-ad-client="ca-pub-8xx925xxx4365"
+     data-ad-slot="5744645800"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+```
+
 
 
 ## 后记

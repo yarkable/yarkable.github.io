@@ -197,7 +197,7 @@ xx.github.io 解析到的 ip 都是后面四个，这是 GitHub page 的服务�
 
 
 
-我还发现用 Cloudflare 解析记录的话挺慢的吧，有时候可能过个几分钟才解析生效，看是否生效就在命令行 ping 一下域名吧，一个很神奇的事，WSL 在 ping 的时候经常会报错找不到域名，而用 windows 自带的 powershell 去 ping 就能够很快知道 ip 地址
+我还发现用 Cloudflare 解析记录的话挺慢的吧，有时候可能过个几分钟才解析生效，看是否生效就在命令行 ping 一下域名吧，一个很神奇的事，WSL 在 ping 的时候经常会报错找不到域名，而用 windows 自带的 powershell 去 ping 就能够很快知道 ip 地址（更新：后来发现是我的 WSL 坏了…）
 
 
 

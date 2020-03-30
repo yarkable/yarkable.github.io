@@ -162,7 +162,9 @@ class Net(nn.Module):
 
 
 
-训练函数如下，训练前要将模型调成训练模式 `model.train()`，然后就初始化 loss 和 精确度，接着将数据集加载进来，这里一次加载是 batch_size 个数据以及标签，所以 image 的个数是 20，
+训练函数如下，训练前要将模型调成训练模式 `model.train()`，然后就初始化 loss 和 精确度，接着将数据集加载进来，这里一次迭代是 batch_size 个数据以及标签，所以 image 的个数是 20，注意每次将样本输入网络前要用 `zero_grad()` 将梯度清空，否则 loss 会变得很大且无法收敛， loss_function 的传入顺序是 **(网络输出，真实标签)** ，不能搞反掉，虽然我试了反过来貌似也不会怎样。这里有些函数和变量会在后面定义，慢慢看
+
+
 
 ```python
 def train(epoch):
@@ -182,3 +184,141 @@ def train(epoch):
         print("Epoch:%d [%d|%d] loss:%f acc:%f" % (epoch, batch_idx, len(trainloader), loss.mean(), train_acc))
 ```
 
+
+
+接下来是验证函数，因为没有测试集，我们就在验证集上评估模型的效果，这时我们是不需要更新权重参数的，所以不需要梯度下降，用 `torch.no_grad()` 取消梯度更新，并且需要用 `model.eval()` 将模型转入评估模式，不管是在评估还是测试样本，只要不是训练，不需要梯度更新的话就要将 model 转为 `eval()` 模式。
+
+
+
+```python
+def val(epoch):
+    print("\nValidation Epoch: %d" % epoch)
+    print(len(valloader))
+    print(len(trainloader))
+    model.eval()
+    total = 0
+    correct = 0
+    with torch.no_grad():
+        for batch_idx, (img, label) in enumerate(valloader):
+            image = img.to(device)
+            label = label.to(device)
+            out = model(image)
+ 
+            _, predicted = torch.max(out.data, 1)
+ 
+            total += image.size(0)
+            correct += predicted.data.eq(label.data).cpu().sum()
+            print("Epoch:%d [%d|%d] total:%d correct:%d" % (epoch, batch_idx, len(valloader), total, correct.numpy()))
+    print("Acc: %f " % ((1.0 * correct.numpy()) / total))
+```
+
+
+
+统计准确率的话通常就用预测正确的样本数除以总共的样本数，所以经常用到 `eq()` 函数，它计算两个 size 相同的 tensor 的相等元素的个数，对应位置相等则返回 1 ，不等则返回 0，看下面例子
+
+![torch.eq()](https://i.loli.net/2020/03/30/PTMCxrGQaOz3sI9.png)
+
+
+
+那么训练的时候计算准确率我们定义了一个函数，其实道理是一样的，都是计算预测正确的与总样本的比值，只不过这里换了一个方法，直接用 `==` 来返回两个 tensor 相等的部分，没有用 `eq()` ，两种方法都可以。前面说了，output 是个四维的值，第一维代表 batch_size，所以迭代一次的总样本数就是 `output.size(0)`
+
+```python
+def get_acc(output, label):
+    total = output.shape[0]
+    _, pred_label = output.max(1)
+    num_correct = (pred_label == label).sum().item()
+    return num_correct / total
+```
+
+![==](https://i.loli.net/2020/03/30/7pkPIevWcNJ89ah.png)
+
+
+
+## 主函数
+
+
+
+函数和网络都定义完了，然后就到主函数交代一些东西，网络用的是预训练好的 ResNet18，优化器用的是 SGD 随机梯度下降，损失函数用的是交叉熵，这个都是超参数，可以随自己喜好修改。在两轮训练之后将模型保存，当然，也可以每一次迭代都保存一次模型，看自己喜欢啦。训练的还挺快的，在两轮之后，验证集上的准确率超过 99%
+
+
+
+```python
+if __name__ =='__main__':
+    resnet = resnet18(pretrained=True) # 直接用 resnet 在 ImageNet 上训练好的参数
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')  # 若能使用cuda，则使用cuda
+    model = Net(resnet) # 修改全连接层
+    # print(model) # 打印出模型结构
+    model = model.to(device) # 放到 GPU 上跑
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=5e-4)  # 设置训练细节
+    criterion = nn.CrossEntropyLoss() # 分类问题用交叉熵普遍
+    for epoch in range(2):
+        train(epoch)
+        val(epoch)
+    torch.save(model, 'modelcatdog.pt')  # 保存模型
+```
+
+
+
+## detect.py
+
+
+
+跑完一个模型，最刺激的部分当然是用图片测试一下这个模型的准确度了，然后我们新建一个 `detect.py` 文件和上面的文件放在同一个目录下，我们要将上面定义的网络结构引入进来，否则加载模型后会报错找不到网络，不用头文件的话也行，就要将网络结构的定义复制到这个文件中
+
+
+
+```python
+import torch
+import cv2
+import torch.nn as nn
+import torch.nn.functional as F
+import matplotlib.pyplot as plt
+# from dogcat import Net  ##重要，若没有引入这个模型代码，加载模型时会找不到模型
+from torchvision import transforms
+from PIL import Image
+```
+
+
+
+然后我们上面定义了猫是 0，狗是 1，在这里也要对应起来，因为 class 是没有重复的，所以一般用 tuple 来装 class 。接着加载模型，将模型转为 `eval()` 模式，加载测试的图片，这里我们也要对这张图片进行相应的操作使它的 size 能够被网络接受。
+
+
+
+这里我们还将这张图片进行了可视化，输入模型后，如果想知道概率的话还要用 softmax 函数来处理输出数据才能转化成正常的概率。
+
+
+
+```python
+classes = ('cat', 'dog')
+if __name__ == '__main__':
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = torch.load('/data/rpcv/kevin/code/jupyter/modelcatdog.pt')  # 加载模型
+    model = model.to(device)
+    model.eval()  # 把模型转为test模式
+    img = cv2.imread("/data/rpcv/kevin/dataset/dogs-vs-cats-redux-kernels-edition/test/1.jpg")  # 读取要预测的图片
+    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    plt.show()
+    img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    trans = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+    ])
+
+    img = trans(img)
+    img = img.to(device)
+    img = img.unsqueeze(0)  # 图片扩展多一维,因为输入到保存的模型中是4维的[batch_size,通道,长，宽]，而普通图片只有三维，[通道,长，宽]
+    output = model(img)
+    prob = F.softmax(output, dim=1)  # prob是2个分类的概率
+    value, predicted = torch.max(prob, 1) # torch.max 返回最大值和最大值的索引号
+    pred_class = classes[predicted.item()]
+    print('predicted class is {}, probability is {}%'.format(pred_class, round(value.item(), 6) * 100))
+```
+
+
+
+![predicted](https://i.loli.net/2020/03/30/m7zePurU4HkwfKt.png)
+
+
+
+最终输出还是很 OK 的，几乎都有超过 99% 的概率预测正确，文章的代码在[我的 GitHub](https://github.com/yarkable/awesome-pytorch/tree/master/dog-vs-cat-classifier) 上可以找到，需要的话大家自取，代码参考[修改pytorch提供的resnet接口实现Kaggle猫狗识别](https://blog.csdn.net/u014453898/article/details/95337290)，对其错误部分有修改和注释

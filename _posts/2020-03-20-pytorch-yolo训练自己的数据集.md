@@ -23,3 +23,8 @@ yolo 是一种目标检测算法，官方是基于 darknet 这种框架来训练
 
 ## 待续
 
+
+
+训练好了，用了 22 个小时
+
+![train_over](https://i.loli.net/2020/03/30/r4zI6gUKsLoBNeA.png)

@@ -321,4 +321,4 @@ if __name__ == '__main__':
 
 
 
-最终输出还是很 OK 的，几乎都有超过 99% 的概率预测正确，文章的代码在[我的 GitHub](https://github.com/yarkable/awesome-pytorch/tree/master/dog-vs-cat-classifier) 上可以找到，需要的话大家自取，代码参考[修改pytorch提供的resnet接口实现Kaggle猫狗识别](https://blog.csdn.net/u014453898/article/details/95337290)，对其错误部分有修改和注释
+最终输出还是很 OK 的，几乎都有超过 99% 的概率预测正确，文章的代码在[我的 GitHub](https://github.com/yarkable/awesome-pytorch/tree/master/dog-vs-cat-classifier) 上可以找到，需要的话大家自取，代码参考[修改pytorch提供的resnet接口实现Kaggle猫狗识别](https://blog.csdn.net/u014453898/article/details/95337290)，对其错误部分有修改和注释。更多有关 pytorch 的注意事项以及知识点可以看我[这篇文章](https://szukevin.site/2020/03/20/%E5%85%B3%E4%BA%8Epytorch%E7%9A%84%E4%B8%80%E4%BA%9B%E7%AC%94%E8%AE%B0/)

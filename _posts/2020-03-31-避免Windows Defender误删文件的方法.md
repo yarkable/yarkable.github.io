@@ -41,3 +41,19 @@ tags:
 
 
 ![close-prot.jpg](https://i.loli.net/2020/04/01/RauzUSW8If4OZLC.jpg)
+
+
+
+如果觉得这玩意一段时间后还是重启乱删东西很不爽的话，接着看下去：同是在**管理设置**里面，往下翻，有一个**排除项** ，点开来
+
+
+
+![exclude](https://i.loli.net/2020/04/04/s6aFx9oBnEDGj2P.png)
+
+
+
+将可能会被误删的东西放到一个文件夹里边儿，然后将这个文件夹添加进**排除项**，以后它应该就不会删除这里面的东西了（但愿）
+
+
+
+![exclude-folder](https://i.loli.net/2020/04/04/X1JjyuTHpLtCW7S.png)

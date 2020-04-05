@@ -10,6 +10,7 @@ tags:
     - sql
     - sql injection
     - security
+    - ctf
 ---
 
 

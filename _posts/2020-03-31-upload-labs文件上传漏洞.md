@@ -1,14 +1,15 @@
 ---
 layout: post
 title: upload-labs文件上传漏洞
-subtitle: 这玩意戏太多了吧
+subtitle: 
 date: 2020-03-31
 author: kevin
 header-img: img/green-bg.jpg
 catalog: true
 tags:
-    - troubleshoot
-sssssssssssssssssssbbbbbbbbbbbbbbbbbb
+    - php
+    - security
+    - ctf
 ---
 
 

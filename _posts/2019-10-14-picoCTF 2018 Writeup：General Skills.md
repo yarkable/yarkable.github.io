@@ -9,6 +9,7 @@ catalog: true
 tags:
     - writeup
     - security
+    - ctf
 ---
 
 ## preface

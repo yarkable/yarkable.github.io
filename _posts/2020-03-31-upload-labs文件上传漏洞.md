@@ -122,9 +122,37 @@ php6 也可以
 
 
 
+比如第一关的 js 限制了只能上传指定后缀的文件，其中不包括 php，那我们就可以在返回 Response 的时候将这段代码修改，添加上 php 后缀。
+
+![before](https://i.loli.net/2020/04/07/uObqrQZozlFdayC.png)
 
 
 
+默认情况下 Burp 是没有开启拦截 Response 的，只会拦截 Request，所以要先修改一下 Option，勾选住  `Intercept Server Responses`，这样就可以同时拦截到 Request 和 Response 了
+
+
+
+![burp-setting](https://i.loli.net/2020/04/07/6byGYtT9FdSxa2E.png)
+
+
+
+之后刷新一下页面，不出意外应该会被 Burp 拦截，然后将 Request 放行，修改 Response，将 php 后缀添加上去，然后点击 forward 放行
+
+
+
+![modify-response](https://i.loli.net/2020/04/07/kVLP3Y4bZ9Bh8lA.png)
+
+
+
+之后再浏览器中渲染出来的 js 代码就是修改过后的，这时我们就可以突破限制上传 php 脚本了
+
+
+
+![](https://i.loli.net/2020/04/07/eJA4hqazxjKHGMt.png)
+
+
+
+---
 
 
 

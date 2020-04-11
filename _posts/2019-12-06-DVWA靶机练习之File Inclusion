@@ -1,8 +1,8 @@
 ---
 layout:     post
-title:      DVWA靶机练习之File Upload
+title:      DVWA靶机练习之File Inclusion
 subtitle:   
-date:       2019-12-11
+date:       2019-12-06
 author:     kevin
 header-img: img/green-bg.jpg
 catalog: true

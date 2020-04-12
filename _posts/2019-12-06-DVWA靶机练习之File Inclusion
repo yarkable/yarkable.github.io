@@ -19,18 +19,15 @@ tags:
 
 
 
-这是 DVWA 靶场练习系列的第三篇，这次的内容是文件上传漏洞，这里是针对 php 的漏洞，文件上传漏洞就是指程序员没有对用户上传的文件做检查，导致用户上传了恶意脚本即 webshell，来获取敏感信息甚至提取服务器权限
+这是 DVWA 靶场练习系列的第五篇，这次的内容是文件包含漏洞，即服务器通过 php 的特性（函数）去包含任意文件时，由于要包含的这个文件来源过滤不严，从而可以去包含一个恶意文件，而我们可以构造这个恶意文件来达到邪恶的目的。
 
 
 
->  文件上传漏洞的三个必要条件是：
->
-> 1. 可上传木马文件
->
-> 2. 文件能被执行
-> 3. 知道上传文件路径
+>  涉及到的危险函数：include(),require()和include_once(),require_once()
 
-缺了一个都不能执行上传漏洞
+
+
+并且被包含的文件都是被当作 php 文件来执行的，不管文件的后缀是什么，只要内容是 php 格式的话，就可以被执行，如果内容不是 php，则会将内容直接打印出来，常常和文件上传漏洞相配合使用
 
 
 
@@ -38,17 +35,37 @@ tags:
 
 
 
-直接上传一个 php 一句话上去，回显出了文件路径
+给出三个 php 文件，利用 GET 的形式获取文件，然后将文件包含
+
+![inclusion](https://i.loli.net/2020/04/12/3pcIFZby1rsz6mj.png)
+
+如果我们填上一个不存在的文件，看到服务器就会报错，直接就把根目录给搞出来了
+
+![error](https://i.loli.net/2020/04/12/a6xIo9GCiMRr5OV.png)
 
 
 
-![php-shell](https://i.loli.net/2020/04/11/7RiPjEZY8xGzh2c.png)
+那么我们就可以直接读取服务器上的任意文件了，先读个 ini 文件看看
+
+![ini-read](https://i.loli.net/2020/04/12/7Iwvzqcb9xS1rYA.png)
 
 
 
-拿蚁剑一连，OK，搞定
+反正只要知道服务器上文件的位置，就可以进行读取了，一般如果知道了某个 webshell 的位置，用文件包含漏洞可以直接连上网站后台
 
-![ant-sword](https://i.loli.net/2020/04/11/UQLmVOhalWrvqPT.png)
+
+
+本地文件包含：
+
+```txt
+http://localhost/dvwa/vulnerabilities/fi/?page=../../php.ini
+```
+
+远程文件包含
+
+```txt
+http://localhost/dvwa/vulnerabilities/fi/?page=http://localhost/dvwa/php.ini
+```
 
 
 
@@ -56,47 +73,29 @@ tags:
 
 
 
-中级关卡再上传 php 一句话就提示只能提交图片格式的文件了
+中级的代码按照 low 级别的方法就不行了，直接会报错，看看源代码发现是将路径和 http 协议进行了字符串替换，其实这个还挺简单的，那就直接双写就可以绕过了
+
+![medium](https://i.loli.net/2020/04/12/magkwWq1JoltVXT.png)
+
+
+
+本地文件包含：
 
 ```txt
-Your image was not uploaded. We can only accept JPEG or PNG images
+http://localhost/dvwa/vulnerabilities/fi/?page=..././..././php.ini
 ```
 
-猜测是进行了 MIME 校验，于是上传一句话，然后用 Burp 抓包，修改 MIME 为 `image/jpeg`，成功上传，蚁剑连起来
-
-
-
-![](https://i.loli.net/2020/04/11/OCY3ViAz4S6nZcR.png)
-
-
-
-![php-shell](https://i.loli.net/2020/04/11/7RiPjEZY8xGzh2c.png)
-
-
-
-### 第二种方法
-
-
-
-可以用组合拳，因为这套靶机还有文件包含漏洞，因此可以用文件包含漏洞结合文件上传漏洞进行攻击，因为文件包含是将包含的文件都按照 php 来执行，所以我们这里可以将一句话的后缀改成 jpg，然后用文件包含漏洞去执行
-
-
-
-![file-inclusion](https://i.loli.net/2020/04/11/gNxvmMryO9SUoiC.png)
-
-
-
-在蚁剑 url 处填上文件包含的地址，由于是 medium 级别的文件包含，所以要双写 http 绕过
+远程文件包含：
 
 ```txt
-http://localhost/dvwa/vulnerabilities/fi/?page=..././..././hackable/uploads/php-one-word.jpg
+http://localhost/dvwa/vulnerabilities/fi/?page=hthttp://tp://localhost/dvwa/php.ini
 ```
 
+或者直接用绝对路径(low 级别已经知道了服务器绝对路径)
 
-
-**但是，由于 DVWA 靶机是需要登录的，所以需要 cookie 进行身份认证，否则会重定向到登陆页面，拿不到 shell，因此可以先保存网站数据再右键浏览网站，保存相应的 cookie，这样才能成功 getshell**
-
-![sword](https://i.loli.net/2020/04/11/jzgV1vGPZYEtLHh.png)
+```txt
+http://localhost/dvwa/vulnerabilities/fi/?page=F:\nginx-1.16.1\html\dvwa\php.ini
+```
 
 
 
@@ -104,18 +103,17 @@ http://localhost/dvwa/vulnerabilities/fi/?page=..././..././hackable/uploads/php-
 
 
 
-high 级别的上传漏洞，像 medium 一样修改了 MIME 之后还是说格式错误，只接受图片文件，所以猜想它应该是检查了图片的内容，所以直接在一张真正的图片后面加入我们的一句话木马，用十六进制编辑器来搞张图片马就行了
+high 级别输入一个地址就会返回 `ERROR: File not found!`，没什么思路，查看源代码，只有 page 参数 为 `include.php` 或者以 `file` 开头的文件才能够绕过，否则都会报错说文件不存在
 
 
 
-![hex](https://i.loli.net/2020/04/11/XKUVo6QFSh7luAZ.png)
+![high](https://i.loli.net/2020/04/12/HlvMbi4serKTNRx.png)
 
-
-
-可以直接上传，然后配合文件包含漏洞执行代码，同理也是要在蚁剑里面设置 cookie 才能连上去
+那其实就可以利用 `file` 协议进行本地文件包含(file:///)，当我们在浏览器中打开一个本地文件时用的就是 `file` 协议
 
 ```txt
-http://localhost/dvwa/vulnerabilities/fi/?page=file:///F:/nginx-1.16.1/html/dvwa/hackable/uploads/4.jpg
+http://localhost/dvwa/vulnerabilities/fi/?page=file:///F:\nginx-1.16.1\html\dvwa\php.ini
 ```
 
-关于文件包含漏洞看我之前发的 DVWA 的文件包含漏洞教程
+
+

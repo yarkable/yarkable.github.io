@@ -7,7 +7,8 @@ author:     kevin
 header-img: img/green-bg.jpg
 catalog: true
 tags:
-        - linux
+    - linux
+    - OpenCV
 ---
 
 
@@ -115,3 +116,52 @@ $ make -j
 
 
 ![opencv-4.jpg](https://i.loli.net/2019/11/04/Z1ztcnBC42AWliY.jpg)
+
+
+
+> 2020.05.16 我又回来了，假设上面 make 的步骤已经成功了，接下来就要将 OpenCV 安装到系统里面了
+
+
+
+## make install
+
+
+
+make 之后，生成了可执行的文件，如果源码编译没有问题的话，便将程序安装至系统预设的可执行文件存放路径，在 Makefile 里面指定。用下面这个命令进行安装（要有 sudo 权限，因为这是向系统里面写文件）
+
+
+
+```bash
+$ sudo make install
+```
+
+
+
+## 配置链接库
+
+
+
+程序运行时加载动态链接库可以通过 `ldconfig` 来执行，这玩意是什么东西呢？程序运行的时候可能需要动态的链接库，主要是在默认搜寻目录 `/lib` 和 `/usr/lib` 以及动态库配置文件 `/etc/ld.so.conf` 内所列的目录下, 
+搜索出可共享的动态链接库(.so 后缀文件)。因此一般的做法就是在 `/etc/ld.so.conf` 下新建一个文件叫做 `opencv.conf`，往里面写上动态链接库的路径，再通过 `ldconfig` 命令使配置的路径生效。
+
+
+
+```bash
+$ sudo vim /etc/ld.so.conf.d/opencv.conf
+```
+
+
+
+往里面写上 `/usr/local/lib ` ，表示去 `/usr/local/lib ` 这个目录寻找 OpenCV 的动态链接库（make install 时将动态链接库安装在此处）
+
+
+
+最后执行 `ldconfig` 命令使修改生效，下次程序运行时，会自动在 `/usr.local/lib` 目录中搜索动态库
+
+```bash
+$ sudo ldconfig
+```
+
+
+
+到此，ubuntu 下的 OpenCV 库的配置就结束了，开始调包吧

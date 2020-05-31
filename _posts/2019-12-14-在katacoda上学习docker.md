@@ -92,7 +92,7 @@ $ apache2ctl -DFOREGROUND
 $ docker ps -a
 ```
 
-要删除所有正在运行的和停止的容器可以用 `rm` 命令
+要删除所有停止的容器可以用 `rm` 命令
 
 ```bash
 $ docker rm $(docker ps -aq)
@@ -205,6 +205,52 @@ $ docker run -d -it --name counter1 loodse/counter
 ```bash
 $ docker attach counter1
 ```
+
+
+
+## 处理停止的容器
+
+
+
+一般情况下，如果运行了容器再退出来的话（用 `exit` 或者 `Ctrl+d`），容器的状态就变成了 `Exited`，这样的话容器就已经停止运行了，可以用 `start` 命令将停止的容器运作起来（这也是为什么虽然容器停止运行了但是还是会占磁盘容量的原因）
+
+```bash
+$ docker start <container ID | container name>
+```
+
+重新开启之后，容器就在后台启动了，可以用前面说的 `attach` 命令将容器安排到前台运行
+
+```bash
+$ docker attach <container ID | container name>
+```
+
+
+
+如果我们有停止的容器，并且不打算再 `start` 它们的时候，就要将这些容器给删除，删除容器用的是 `rm` 命令，这条命令只对停止运行的容器起作用，还在运行的容器是不能被删除的，要先停止才能够被删除。
+
+```bash
+$ docker rm <container ID | container name>
+```
+
+如果不需要的容器太多了，一个一个删很麻烦，就可以利用下面这个命令进行全部删除（获取所有容器的 id，正在运行的不能被删除，停止了的会全部被删除）
+
+```bash
+$ docker rm $(docker ps -aq)
+```
+
+在 Docker 1.13 版本之后，docker 新加了一个命令可以直接删除所有停止的容器，更加方便
+
+```bash
+$ docker container prune
+```
+
+
+
+### attention
+
+
+
+但是，大多数情况下我们都不希望退出容器的时候将容器停止运行，反而希望他能够继续运行，这也是有办法的，通过 `Ctrl+p+q` 这三个键一起按就可以实现了！这样的话，退出容器时容器还会继续在后台运行，下次想进去容器直接 `attach` 就可以了
 
 
 

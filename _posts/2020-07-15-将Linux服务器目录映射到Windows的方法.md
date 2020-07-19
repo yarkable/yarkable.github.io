@@ -1,8 +1,8 @@
 ---
 layout: post
-title: CV深度学习面试问题记录
+title: 将Linux服务器目录映射到Windows的方法
 subtitle: 
-date: 2020-06-30
+date: 2020-07-15
 author: kevin
 header-img: img/green-bg.jpg
 catalog: true
@@ -13,62 +13,44 @@ tags:
 
 
 
-## 安装
+## preface
 
 
 
-1 先创建一个名为 open-mmlab 的虚拟环境并激活
-
-```bash
-$ conda create -n open-mmlab python=3.7 -y
-$ conda activate open-mmlab
-```
-
-2 安装合适版本的 pytorch（去[官网](https://pytorch.org/)按照自己的 cuda 版本进行安装）
-
-```bash
-$ conda install -c pytorch pytorch torchvision -y
-```
-
-3 安装 mmcv
-
-```bash
-$ pip install mmcv-full==latest+torch1.5.0+cu101 -f https://openmmlab.oss-accelerate.aliyuncs.com/mmcv/dist/index.html
-```
-
-(或者直接用下面这条命令也可以)
-
-```bash
-$ pip install mmcv-full
-```
-
-4 克隆 mmdetection 仓库并进入
-
-```bash
-$ git clone https://github.com/open-mmlab/mmdetection.git
-$ cd mmdetection
-```
-
-5 安装依赖以及 mmdetection
-
-```bash
-$ pip install -r requirements/build.txt
-$ pip install -v -e .  # or "python setup.py develop"
-```
+本人日常主用 Windows 系统，然后 ssh 到服务器上进行 code，所以涉及文件传输都用 scp 命令或者直接用 mobaXTerm 进行，还是有些小不方便的，因为我还是得将东西下载到自己的 Windows 上再传到 Linux 服务器上。上次看师兄在群里分享了一个软件可以直接将服务器上的目录挂在到 Windows 的资源管理器，相当于多了一个磁盘，这样子就可以直接将数据下载到服务器上了，省去了一步操作，挺方便的，这就记录一下。
 
 
 
-## 使用
+## installation
 
 
 
-//TODO
+这玩意叫 SSHFS-Win ，[GitHub 官方仓库](https://github.com/billziss-gh/sshfs-win)都有指示页，其实就下载两个文件就行了，照着安装起来
 
 
 
-## reference
+![install](https://i.loli.net/2020/07/19/Ny24MhnQVKOtDlA.png)
 
 
 
-https://mmdetection.readthedocs.io/en/latest
+## use
 
+
+
+安装完的话就可以用了，Windows 下打开资源管理器，右击 `此电脑` ，选择 `映射网络驱动器`
+
+![mapping](https://i.loli.net/2020/07/19/FfsJxvZbR5mKnoC.png)
+
+
+
+然后文件夹中填上前缀 `\\sshfs\`，后面就是自己服务器的用户名和 ip 地址，和登录 ssh 服务器是一样操作的。还可以直接加上自己服务器上的文件夹，很方便。
+
+![图片.png](https://i.loli.net/2020/07/19/ClqsQ5A9fcNDznY.png)
+
+
+
+上一步填完信息之后，会让我们填入服务器相对应的密码，我这里就不展示了，成功了之后呢，在资源管理器上面就会出现一个新的卷，将服务器上的目录映射到了本地，就可以像操作自己电脑文件一样操作远程服务器了。
+
+
+
+![server](https://i.loli.net/2020/07/19/cts1gTz348KfSaD.png)

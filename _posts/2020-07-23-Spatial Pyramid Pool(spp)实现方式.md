@@ -58,20 +58,20 @@ def spatial_pyramid_pool(self,previous_conv, num_sample, previous_conv_size, out
     
     # 上图中 out_pool_size 为 [4, 2, 1]
     for i in range(len(out_pool_size)):
-        # math.ceil 向上取整
+        '''math.ceil 向上取整''' 
         h_wid = int(math.ceil(previous_conv_size[0] / out_pool_size[i]))
         w_wid = int(math.ceil(previous_conv_size[1] / out_pool_size[i]))
-        # 要加1，因为此处单位是像素
+        '''要加1，因为此处单位是像素'''
         h_pad = (h_wid*out_pool_size[i] - previous_conv_size[0] + 1)/2
         w_pad = (w_wid*out_pool_size[i] - previous_conv_size[1] + 1)/2
-		# MaxPool2d(kernel_size, stride=None, padding=0)
+		'''MaxPool2d(kernel_size, stride=None, padding=0)''' 
         maxpool = nn.MaxPool2d((h_wid, w_wid), stride=(h_wid, w_wid), padding=(h_pad, w_pad))
         x = maxpool(previous_conv)
         if(i == 0):
-            # 展开成向量，num_sample是batch_size
+            '''展开成向量，num_sample是batch_size'''
             spp = x.view(num_sample,-1)
         else:
-            # 拼接成 vector
+            '''拼接成 vector'''
             spp = torch.cat((spp,x.view(num_sample,-1)), 1)
     return spp
 ```
@@ -87,14 +87,14 @@ class SPP_NET(nn.Module):
     '''
     def __init__(self, ndf=64):
         super(SPP_NET, self).__init__()
-        # 省略一堆不重要的东西……
+        '''省略一堆不重要的东西……'''
         self.output_num = [4,2,1]
         self.conv5 = nn.Conv2d(ndf * 8, 64, 4, 1, 0, bias=False)
         self.fc1 = nn.Linear(10752,4096)
         self.fc2 = nn.Linear(4096,1000)
         
     def forward(self,x):
-        # 省略一堆……
+        '''省略一堆……'''
         x = self.conv5(x)
         spp = spatial_pyramid_pool(x,1,[int(x.size(2)),int(x.size(3))],self.output_num)
         fc1 = self.fc1(spp)

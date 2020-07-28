@@ -56,7 +56,7 @@ def spatial_pyramid_pool(self,previous_conv, num_sample, previous_conv_size, out
     returns: a tensor vector with shape [1 x n] is the concentration of multi-level pooling
     '''    
     
-    # 上图中 out_pool_size 为 [4, 2, 1]
+    '''上图中 out_pool_size 为 [4, 2, 1]'''
     for i in range(len(out_pool_size)):
         '''math.ceil 向上取整''' 
         h_wid = int(math.ceil(previous_conv_size[0] / out_pool_size[i]))

@@ -102,6 +102,18 @@ Burp 这个工具做过 web 安全的人都应该用过，是个非常强大的�
 
 
 
+## misc
+
+
+
+顺带一提，Burp 在 Windows 上的默认编码并不是 UTF-8 ，所以会出现对中文字符显示乱码的问题，因此我们需要将默认的编码格式改成 UTF-8 ，在 `User option` 里面修改，有些字体也可能不支持中文显示，最好用微软雅黑
+
+
+
+![charset](https://i.loli.net/2020/08/17/M9GvDd6bcesXnC5.png)
+
+
+
 ## reference
 
 

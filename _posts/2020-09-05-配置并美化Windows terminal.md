@@ -92,7 +92,7 @@ OK，这就算初步配置完成了，此时肯定是乱码的，因为这种主
 
 
 
-```json
+```txt
 {
     "$schema": "https://aka.ms/terminal-profiles-schema",
 

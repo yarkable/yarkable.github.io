@@ -84,7 +84,7 @@ OK，这就算初步配置完成了，此时肯定是乱码的，因为这种主
 
 
 
-只要在 profile 里面新增自己的 profile 就行了，但是要注意不能用同样的 GUID，可以在 powershell 中用 ` new-guid` 命令生成一个独特的 GUID ，然后配色主题的话可以去 [GitHub 这个网站](https://github.com/mbadolato/iTerm2-Color-Schemes)找到，然后贴到 `schemes` 里面就行了。
+只要在 profile 里面新增自己的 profile 就行了，但是要注意不能用同样的 GUID，可以在 powershell 中用 ` new-guid` 命令生成一个独特的 GUID ，然后配色主题的话可以去 [这个仓库](https://github.com/mbadolato/iTerm2-Color-Schemes) 找到，然后贴到 `schemes` 里面就行了。
 
 
 

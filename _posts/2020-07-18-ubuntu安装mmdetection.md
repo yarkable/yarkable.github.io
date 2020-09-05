@@ -33,7 +33,7 @@ $ conda activate open-mmlab
 $ conda install -c pytorch pytorch torchvision -y
 ```
 
-3 安装 mmcv
+3 安装 mmcv（看清楚自己的 CUDA 版本）
 
 ```bash
 $ pip install mmcv-full==latest+torch1.5.0+cu101 -f https://openmmlab.oss-accelerate.aliyuncs.com/mmcv/dist/index.html

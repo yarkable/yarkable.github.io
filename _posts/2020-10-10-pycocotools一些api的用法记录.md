@@ -165,7 +165,7 @@ plt.show()
 
 
 
-![图片.png](https://i.loli.net/2020/10/11/pHq6IXQNvVB4G7z.png)
+![mask_bbox](https://i.loli.net/2020/10/11/pHq6IXQNvVB4G7z.png)
 
 ## 实际应用
 

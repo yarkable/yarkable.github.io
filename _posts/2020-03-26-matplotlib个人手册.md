@@ -94,7 +94,35 @@ plt.show()
 
 
 
-### subplot
+一般在代码中想让多张图在一张图上面显示的话呢，可以用下面这种代码，也就是 `fig,axes = plt.subplots()` ，这样得到了两个列表，只需要对 axes 列表进行操作就能够得到相应的图像
+
+
+
+另外，`plt.imshow()` 函数里面的值要么是 0-255 的整数，要么就是 0-1 之间的浮点数，否则会显示失败，报错
+
+```python
+fig, axes = plt.subplots(nrows=1, ncols=3, figsize=[12.8, 7.2], dpi=300)
+axes[0].axis('off')
+import os.path as osp
+img = img / np.amax(img)
+img = np.clip(img, 0, 1)        
+axes[0].imshow(img)
+axes[0].set_title("Original Img")
+for i in range(gt_bboxes.shape[0]):
+    bbox = gt_bboxes[i, :4].cpu().numpy()
+    rect = plt.Rectangle((bbox[0], bbox[1]), bbox[2] - bbox[0], bbox[3] - bbox[1], linewidth=1, edgecolor='g', facecolor='none')
+    axes[0].add_patch(rect)
+
+    axes[1].axis('off')
+    for i in range(gt_bboxes.shape[0]):
+        bbox = gt_bboxes[i, :4].cpu().numpy()
+        rect = plt.Rectangle((bbox[0], bbox[1]), bbox[2] - bbox[0], bbox[3] - bbox[1], linewidth=1, edgecolor='g', facecolor='none')
+        axes[2].add_patch(rect)
+    for i in range(pos_points.shape[0]):
+        axes[2].scatter(pos_points[i, 0], pos_points[i, 1], s=3,linewidths=1)
+        axes[2].set_title("Positive Points")
+        plt.savefig('./show_dirs/bool_mask_with_points{}.png'.format(time.time()))
+```
 
 
 

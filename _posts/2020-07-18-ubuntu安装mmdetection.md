@@ -65,7 +65,44 @@ $ pip install -v -e .  # or "python setup.py develop"
 
 
 
+mmdetection 里面分了好多目录，将相关的文件都放在了同一个文件夹中，下面就会介绍一些重要的文件夹
+
+
+
+```txt
+├── configs
+├── data
+├── demo
+├── docker
+├── docs
+├── mmdet
+├── mmdet.egg-info
+├── requirements
+├── resources
+├── tests
+├── tools
+└── work_dirs
+```
+
+
+
 ### configs
+
+
+
+```txt
+├── albu_example
+├── atss
+├── _base_
+├── carafe
+├── cascade_rcnn
+├── centripetalnet
+├── cityscapes
+├── cornernet
+├── ………………
+├── dcn
+├── deepfashion
+```
 
 
 
@@ -81,11 +118,116 @@ $ pip install -v -e .  # or "python setup.py develop"
 
 
 
-### models
+### mmdet
+
+
+
+mmdet 这个文件夹是非常重要的，算法源码几乎都在里面，所以重点要知道里面每个文件夹里有什么东西
+
+```txt
+├── apis
+├── core
+├── datasets
+├── __init__.py
+├── models
+├── ops
+├── __pycache__
+├── utils
+└── version.py
+```
+
+
+
+#### core
+
+
+
+core 里面是针对大多数任务都会有的核心操作，比如 anchor 的生成和分配，mAP 计算，bbox 的编码解码，后处理 nms 等等
+
+```txt
+├── anchor
+├── bbox
+├── evaluation
+├── export
+├── fp16
+├── __init__.py
+├── mask
+├── post_processing
+├── __pycache__
+└── utils
+```
+
+
+
+#### datasets
+
+
+
+datasets 里面包含了对数据集的处理，尤其是 pipelines 这个文件夹，里面集成了很多个类用来表示对数据集的一些通用操作，如 pad，randomflip，resize 等等，如果想定义一个新的数据集，就得在这里新建一个 py 文件，并且在 `__init__.py` 里面添加这个文件以注册
+
+
+
+```txt
+├── builder.py
+├── cityscapes.py
+├── coco.py
+├── custom.py
+├── dataset_wrappers.py
+├── deepfashion.py
+├── __init__.py
+├── lvis.py
+├── pipelines
+├── __pycache__
+├── samplers
+├── utils.py
+├── voc.py
+├── wider_face.py
+└── xml_style.py
+```
+
+
+
+#### models
+
+
+
+models 这个文件夹更加重要，可以说是对我们来说整个 mmdetection 最需要认真看的地方，里面全是一些实现的细节。backbone 里面是分类骨干网络的实现，xx_heads 是网络头部的实现，neck 是连接 backbone 和 heads 的部分，而 detector 里面就是某一个具体的算法的配置，loss 里面实现了各种损失函数。这些都是部件，在 config 的配置中就可以将这些东西组成在一起形成一个具体的算法
+
+```txt
+├── backbones
+├── builder.py
+├── dense_heads
+├── detectors
+├── __init__.py
+├── losses
+├── necks
+├── __pycache__
+├── roi_heads
+└── utils
+```
 
 
 
 ### tools
+
+
+
+```txt
+├── analyze_logs.py
+├── benchmark.py
+├── browse_dataset.py
+├── coco_error_analysis.py
+├── convert_datasets
+├── detectron2pytorch.py
+├── dist_test.sh
+├── dist_train.sh
+├── eval_metric.py
+├── get_flops.py
+├── print_config.py
+├── ………………
+├── train.py
+└── upgrade_model_version.py
+```
 
 
 
@@ -154,6 +296,16 @@ python tools/analyze_logs.py plot_curve [--keys ${KEYS}] [--title ${TITLE}] [--l
 ```
 
 ![option_analyze_logs](https://i.loli.net/2020/10/08/3dvQpZI5aTnPybx.png)
+
+## 修改代码
+
+
+
+讲一下我在修改 fcos 的过程中学习到的 mmdetection 处理流程以及相应代码的解释
+
+// TODO
+
+
 
 
 

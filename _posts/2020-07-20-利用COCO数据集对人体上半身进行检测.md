@@ -7,7 +7,7 @@ author: kevin
 header-img: img/green-bg.jpg
 catalog: true
 tags:
-    - Linux
+    - linux
     - object detection
     - deep learning
 ---

@@ -9,6 +9,7 @@ catalog: true
 tags:
     - deep learning
     - python
+    - torchscript
     - image matting
 ---
 

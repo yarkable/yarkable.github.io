@@ -420,7 +420,7 @@ while self.epoch < max_epochs:
 
 
 
-无论是什么检测器，在 mmdetection 中可以简单被分成 `backbone`、`neck`、`head` 这三个部分，只要搞懂组成某个检测器的这三个部分是怎么前向传播的就能够明白原理。首先给出很重要的六个文件，都在 `mmdet/models` 里面，最重要的打上 `*` 号
+无论是什么检测器，在 mmdetection 中可以简单被分成 `backbone`、`neck`、`head` 这三个部分，只要搞懂组成某个检测器的这三个部分是怎么前向传播的就能够明白原理。首先给出很重要的六个文件，都在 `mmdet/models` 里面，最重要的打上 `*` 号  //TODO
 
 ```txt
 * base.py

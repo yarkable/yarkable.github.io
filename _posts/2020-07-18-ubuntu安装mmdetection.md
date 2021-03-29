@@ -307,6 +307,148 @@ python tools/analyze_logs.py plot_curve [--keys ${KEYS}] [--title ${TITLE}] [--l
 
 
 
+## 一些相关概念
+
+
+
+### workflow
+
+
+
+`workflow = [('train', 1)]` is mean train only.  `workflow = [('train', 3),('val',1)]` is mean that first train 3 epochs, then val 1 epcoh, then loop. 这个是继承了 `default_runtime.py` 
+
+
+
+### train
+
+
+
+训练流程 （train.py） ，先是注册好模型数据集
+
+```python
+model = build_detector(
+    cfg.model, train_cfg=cfg.train_cfg, test_cfg=cfg.test_cfg)
+
+datasets = [build_dataset(cfg.data.train)]
+```
+
+
+
+然后直接调用 `train_detector`
+
+```python
+train_detector(
+    model,
+    datasets,
+    cfg,
+    distributed=distributed,
+    validate=(not args.no_validate),
+    timestamp=timestamp,
+    meta=meta)
+```
+
+
+
+`train_detector` 在 `mmdet/apis/train.py`， 这里面 先是注册优化器，然后再定义了一个 runner，这个 runner 是训练的主要东西
+
+```
+optimizer = build_optimizer(model, cfg.optimizer)
+runner = EpochBasedRunner(
+    model,
+    optimizer=optimizer,
+    work_dir=cfg.work_dir,
+    logger=logger,
+    meta=meta)
+```
+
+
+
+之后定义各种针对 runner 的 Hook 钩子函数
+
+```
+runner.register_training_hooks(cfg.lr_config, optimizer_config,
+                               cfg.checkpoint_config, cfg.log_config,
+                               cfg.get('momentum_config', None))
+runner.register_hook(eval_hook(val_dataloader, **eval_cfg))
+```
+
+
+
+相关的东西定义完之后呢，就调用 `runner.run` 函数，开始真正训练代码，这个函数在 mmcv 的 `runner/epoch_based_runner.py` 里面，根据数据集以及 workflow 和迭代次数做出训练
+
+```python
+def run(self, data_loaders, workflow, max_epochs, **kwargs):
+```
+
+
+
+同样的，真正的训练函数和验证函数都在这个文件里面
+
+```python
+def train(self, data_loader, **kwargs):
+def val(self, data_loader, **kwargs):
+```
+
+
+
+如何判断是进行 train 还是 val 就在下面这段代码里面，其实就是根据 workflow 来找到关键字 `train` 或者 `val` ，将 epoch_runner 定义为关键字，刚好这个类里面又有以 `train` 和 `val` 命名的函数，所以直接调用 `epoch_runner` 就相当于训练或测试了几个 epoch
+
+```python
+while self.epoch < max_epochs:
+    for i, flow in enumerate(workflow):
+        mode, epochs = flow
+        if isinstance(mode, str):  # self.train()
+            if not hasattr(self, mode):
+                raise ValueError(
+                    f'runner has no method named "{mode}" to run an '
+                    'epoch')
+            epoch_runner = getattr(self, mode)
+        else:
+            raise TypeError(
+                'mode in workflow must be a str, but got {}'.format(
+                    type(mode)))
+
+        for _ in range(epochs):
+            if mode == 'train' and self.epoch >= max_epochs:
+                break
+            epoch_runner(data_loaders[i], **kwargs)
+```
+
+
+
+### forward 相关
+
+
+
+无论是什么检测器，在 mmdetection 中可以简单被分成 `backbone`、`neck`、`head` 这三个部分，只要搞懂组成某个检测器的这三个部分是怎么前向传播的就能够明白原理。首先给出很重要的六个文件，都在 `mmdet/models` 里面，最重要的打上 `*` 号
+
+```txt
+* base.py
+single_stage.py
+two_stage.py
+* base_dense_head.py
+anchor_head.py
+anchor_free_head.py
+```
+
+
+
+
+
+
+
+## 一些比较好的教程
+
+
+
+[Faster RCNN](https://zhuanlan.zhihu.com/p/137454940) 
+
+[mmdetection 最小复刻版（内有很多详细算法解读）](https://github.com/hhaAndroid/mmdetection-mini)
+
+[mmdetection可视化一些 Anchor 和 Proposal](https://bbs.cvmart.net/topics/2986)
+
+[FCOS（带有正样本的可视化）--深度眸](https://www.zybuluo.com/huanghaian/note/1747551)
+
 
 
 ## reference

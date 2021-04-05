@@ -319,6 +319,14 @@ python tools/analyze_logs.py plot_curve [--keys ${KEYS}] [--title ${TITLE}] [--l
 
 
 
+---
+
+
+
+[('train', 1)] 和 [('train', 1), ('val', 1)] 是不一样的，后者会在训完一轮后再训验证集，会计算验证集上的 loss，这对模型分析很有用（如 ResNet 里面就有这么干）
+
+
+
 ### train
 
 
@@ -420,18 +428,243 @@ while self.epoch < max_epochs:
 
 
 
-无论是什么检测器，在 mmdetection 中可以简单被分成 `backbone`、`neck`、`head` 这三个部分，只要搞懂组成某个检测器的这三个部分是怎么前向传播的就能够明白原理。首先给出很重要的六个文件，都在 `mmdet/models` 里面，最重要的打上 `*` 号  //TODO
+无论是什么检测器，在 mmdetection 中可以简单被分成 `backbone`、`neck`、`head` 这三个部分，只要搞懂组成某个检测器的这三个部分是怎么前向传播的就能够明白原理。首先给出很重要的七个文件，都在 `mmdet/models` 里面，最重要的打上 `*` 号  //TODO
 
 ```txt
 * base.py
 single_stage.py
 two_stage.py
 * base_dense_head.py
+* base_roi_head.py
 anchor_head.py
 anchor_free_head.py
 ```
 
 
+
+想看网络是怎么前向传播的就得看 forward 函数，基类 `BaseDetector` 当中的 `forward` 方法调用了 `self.forward_train` ，如下面所示
+
+```python
+@auto_fp16(apply_to=('img', ))
+def forward(self, img, img_metas, return_loss=True, **kwargs):
+    """Calls either :func:`forward_train` or :func:`forward_test` depending
+        on whether ``return_loss`` is ``True``.
+
+        Note this setting will change the expected inputs. When
+        ``return_loss=True``, img and img_meta are single-nested (i.e. Tensor
+        and List[dict]), and when ``resturn_loss=False``, img and img_meta
+        should be double nested (i.e.  List[Tensor], List[List[dict]]), with
+        the outer list indicating test time augmentations.
+        """
+    if return_loss:
+        return self.forward_train(img, img_metas, **kwargs)
+    else:
+        return self.forward_test(img, img_metas, **kwargs)
+
+```
+
+
+
+`forward_train` 在 `BaseDetector` 中是个抽象方法，需要被子类实现，也就是继承 `BaseDetector` 的  `SingleStageDetector` 和 `TwoStageDetector`，因此主要看的就是这两个类中的 `forward_train` 函数
+
+
+
+在 `SingleStageDetector` 中，是如下结构，获取特征后让 `bbox_head` 进行 `forward_train` ，所以后面还得去看 `bbox_head` 的 `forward_train` 函数
+
+```python
+    def forward_train(self,
+                      img,
+                      img_metas,
+                      gt_bboxes,
+                      gt_labels,
+                      gt_bboxes_ignore=None):
+        x = self.extract_feat(img)
+        losses = self.bbox_head.forward_train(x, img, img_metas, gt_bboxes,
+                                                gt_labels,
+                                                gt_bboxes_ignore)
+        return losses
+```
+
+
+
+在 `TwoStageDetector` 中，是如下结构，获取特征后，如果输入有 `with_rpn` 的话，就让 `rpn_head` 进行 `forward_train` 得到 proposals，如果没有的话，就自己传入 proposals 参数，不管有没有 rpn ，后面都得调用 `roi_head` 的 `forward_train` 函数，所以，掌握一个规律，一般 `roi_head` 都用在二阶段算法中，且配合 `rpn_head` 一起用，而一阶段几乎都是 `bbox_head`
+
+```python
+    def forward_train(self,
+                      img,
+                      img_metas,
+                      gt_bboxes,
+                      gt_labels,
+                      gt_bboxes_ignore=None,
+                      gt_masks=None,
+                      proposals=None,
+                      **kwargs):
+
+        x = self.extract_feat(img)
+
+        losses = dict()
+
+        if self.with_rpn:
+            proposal_cfg = self.train_cfg.get('rpn_proposal',
+                                              self.test_cfg.rpn)
+            rpn_losses, proposal_list = self.rpn_head.forward_train(
+                x,
+                img_metas,
+                gt_bboxes,
+                gt_labels=None,
+                gt_bboxes_ignore=gt_bboxes_ignore,
+                proposal_cfg=proposal_cfg)
+            losses.update(rpn_losses)
+        else:
+            proposal_list = proposals
+
+        roi_losses = self.roi_head.forward_train(x, img_metas, proposal_list,
+                                                 gt_bboxes, gt_labels,
+                                                 gt_bboxes_ignore, gt_masks,
+                                                 **kwargs)
+        losses.update(roi_losses)
+
+        return losses
+```
+
+
+
+下面我们拿 RetinaNet 来做示范，这是个一阶段 Anchor-based 算法， `bbox_head` 是 `RetinaHead` ，打开文件就发现这是继承 `class RetinaHead(AnchorHead):` 的，但是并没有在里面看到 `forward_train` 函数，于是我们就点开他的父类 `AnchorHead`，里面也没有 `forward_train` 函数，只有 `forward` 函数，同时这个类又是继承 `class AnchorHead(BaseDenseHead):` 的，所以我们又打开 `BaseDenseHead` 来看看，终于找到了！
+
+
+
+不过这里的 `self(x)` 写得有点迷，之前一直没看懂，后来问实验室俊良大哥才知道，解释一下，x 是经过了 fpn 后的五个特征图，是一个 tuple，在 tuple 里面是 5 个 size 为 [bs, c, h, w] 的 featmap。self(x) 调用自己，也就是调用 __call__ 方法，这里没有 __call__ 方法，所以调用的是 nn.Module.__call__ 方法，nn.Module.__call__ 调用了 nn.Module.forward 方法，但是这里没有 forward 方法，别急，继承这个类的 `AnchorHead` 里面有，所以就用了 `AnchorHead` 里面的 forward 函数
+        
+
+```python
+    def forward_train(self,
+                      x,
+                      img, 
+                      img_metas,
+                      gt_bboxes,
+                      gt_labels=None,
+                      gt_bboxes_ignore=None,
+                      proposal_cfg=None,
+                      **kwargs):
+
+        outs = self(x)
+
+        if gt_labels is None:
+            loss_inputs = outs + (gt_bboxes, img_metas)
+        else:
+
+            loss_inputs = outs + (gt_bboxes, gt_labels, img_metas)
+        losses = self.loss(*loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore)
+        if proposal_cfg is None:
+            return losses
+        else:
+            proposal_list = self.get_bboxes(*outs, img_metas, cfg=proposal_cfg)
+            return losses, proposal_list
+
+```
+
+
+
+来看看 `AnchorHead` 的 forward 函数，你又会发现它调用了 `forward_single` 这个函数
+
+```python
+    def forward(self, feats):
+        return multi_apply(self.forward_single, feats)
+```
+
+
+
+然而 `AnchorHead` 这个类里面没有写这个函数，别急，它在 `RetinaHead` 里面，绕来绕去绕了很多，不过，有了这些分析之后你就会发现，以后修改类似的 head 时就只需要修改顶层的 `forward_single` 函数了，其他的大家都一样
+
+```python
+    def forward_single(self, x):
+        cls_feat = x
+        reg_feat = x
+        for cls_conv in self.cls_convs:
+            cls_feat = cls_conv(cls_feat)
+        for reg_conv in self.reg_convs:
+            reg_feat = reg_conv(reg_feat)
+        cls_score = self.retina_cls(cls_feat)
+        bbox_pred = self.retina_reg(reg_feat)
+        return cls_score, bbox_pred
+```
+
+
+
+除此之外，在 `AnchorHead`  里面计算 loss 时还调用了 `self.loss` ，还是一样的分析，看 loss 函数在哪一层类上实现，就去看相应的实现代码，有些是 `loss_single`，有些是 `loss`，注意分清区别。到此，一阶段 Anchor-based 的 head 前向过程就分析得差不多了，一阶段 Anchor-free 算法也是一样的，就是找 `forward_train` 函数，然后要注意是否在顶层类重写了父类方法
+
+
+
+另外，以 Faster RCNN 来分析一下二阶段的算法前向流程，二阶段会复杂点，有很多 head，比如  rpn_head 是 `RPNHead`，roi_head 是 `StandardRoIHead`，按照前面的分析，先让 rpn_head 前向，再让 roi_head 前向。在 `RPNHEAD` 里面没有找到 `forward_train` 函数，一路找过去，还是在 `BaseDenseHead` 里面找到，所以还是得找到哪里实现了 forward 函数，哪里实现了 loss 函数
+
+```python
+    def forward_train(self,
+                      x,
+                      img, 
+                      img_metas,
+                      gt_bboxes,
+                      gt_labels=None,
+                      gt_bboxes_ignore=None,
+                      proposal_cfg=None,
+                      **kwargs):
+
+        outs = self(x)
+
+        if gt_labels is None:
+            loss_inputs = outs + (gt_bboxes, img_metas)
+        else:
+
+            loss_inputs = outs + (gt_bboxes, gt_labels, img_metas)
+        losses = self.loss(*loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore)
+        if proposal_cfg is None:
+            return losses
+        else:
+            proposal_list = self.get_bboxes(*outs, img_metas, cfg=proposal_cfg)
+            return losses, proposal_list
+```
+
+
+
+有了前面的分析，这个也不难，在 `AnchorHead`  中找到了 forward 函数，并且也有 forward_single 函数
+
+```python
+    def forward_single(self, x):
+        cls_score = self.conv_cls(x)
+        bbox_pred = self.conv_reg(x)
+        return cls_score, bbox_pred
+
+    def forward(self, feats):
+        return multi_apply(self.forward_single, feats)
+```
+
+
+
+但是这还不行，因为 `RPNHead` 重写了 forward_single 函数，所以要以 `RPNHead`  中的 forward_single 为准，发现没有，好像二阶段各种算法也就只修改了 forward_single 这个函数，和一阶段是一样的
+
+```python
+    def forward_single(self, x):
+        """Forward feature map of a single scale level."""
+        x = self.rpn_conv(x)
+        x = F.relu(x, inplace=True)
+        rpn_cls_score = self.rpn_cls(x)
+        rpn_bbox_pred = self.rpn_reg(x)
+        return rpn_cls_score, rpn_bbox_pred
+```
+
+
+
+`StandardRoIHead` 接收 `RPNHead` 得到的 proposals 继续前向，经过 RoIPooling 得到大小相同的 RoI，然后进行分类回归得到最终输出，这个直接就在顶层类实现了，所以不用跳着找
+
+```python
+    def forward_train(self,
+                      x,
+                      img_metas,
+                      proposal_list,
+                      gt_bboxes,
+                      gt_labels,
+                      gt_bboxes_ignore=None,
+                      gt_masks=None):
+```
 
 
 

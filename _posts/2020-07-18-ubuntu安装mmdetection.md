@@ -77,7 +77,7 @@ mmdetection 里面分了好多目录，将相关的文件都放在了同一个�
 ├── docs
 ├── mmdet
 ├── mmdet.egg-info
-├── requirements
+├── requirementsd
 ├── resources
 ├── tests
 ├── tools
@@ -428,7 +428,7 @@ while self.epoch < max_epochs:
 
 
 
-无论是什么检测器，在 mmdetection 中可以简单被分成 `backbone`、`neck`、`head` 这三个部分，只要搞懂组成某个检测器的这三个部分是怎么前向传播的就能够明白原理。首先给出很重要的七个文件，都在 `mmdet/models` 里面，最重要的打上 `*` 号  //TODO
+无论是什么检测器，在 mmdetection 中可以简单被分成 `backbone`、`neck`、`head` 这三个部分，只要搞懂组成某个检测器的这三个部分是怎么前向传播的就能够明白原理。首先给出很重要的七个文件，都在 `mmdet/models` 里面，最重要的打上 `*` 号  
 
 ```txt
 * base.py
@@ -472,17 +472,17 @@ def forward(self, img, img_metas, return_loss=True, **kwargs):
 在 `SingleStageDetector` 中，是如下结构，获取特征后让 `bbox_head` 进行 `forward_train` ，所以后面还得去看 `bbox_head` 的 `forward_train` 函数
 
 ```python
-    def forward_train(self,
-                      img,
-                      img_metas,
-                      gt_bboxes,
-                      gt_labels,
-                      gt_bboxes_ignore=None):
-        x = self.extract_feat(img)
-        losses = self.bbox_head.forward_train(x, img, img_metas, gt_bboxes,
-                                                gt_labels,
-                                                gt_bboxes_ignore)
-        return losses
+def forward_train(self,
+                  img,
+                  img_metas,
+                  gt_bboxes,
+                  gt_labels,
+                  gt_bboxes_ignore=None):
+    x = self.extract_feat(img)
+    losses = self.bbox_head.forward_train(x, img, img_metas, gt_bboxes,
+                                          gt_labels,
+                                          gt_bboxes_ignore)
+    return losses
 ```
 
 
@@ -490,41 +490,41 @@ def forward(self, img, img_metas, return_loss=True, **kwargs):
 在 `TwoStageDetector` 中，是如下结构，获取特征后，如果输入有 `with_rpn` 的话，就让 `rpn_head` 进行 `forward_train` 得到 proposals，如果没有的话，就自己传入 proposals 参数，不管有没有 rpn ，后面都得调用 `roi_head` 的 `forward_train` 函数，所以，掌握一个规律，一般 `roi_head` 都用在二阶段算法中，且配合 `rpn_head` 一起用，而一阶段几乎都是 `bbox_head`
 
 ```python
-    def forward_train(self,
-                      img,
-                      img_metas,
-                      gt_bboxes,
-                      gt_labels,
-                      gt_bboxes_ignore=None,
-                      gt_masks=None,
-                      proposals=None,
-                      **kwargs):
+def forward_train(self,
+                  img,
+                  img_metas,
+                  gt_bboxes,
+                  gt_labels,
+                  gt_bboxes_ignore=None,
+                  gt_masks=None,
+                  proposals=None,
+                  **kwargs):
 
-        x = self.extract_feat(img)
+    x = self.extract_feat(img)
 
-        losses = dict()
+    losses = dict()
 
-        if self.with_rpn:
-            proposal_cfg = self.train_cfg.get('rpn_proposal',
-                                              self.test_cfg.rpn)
-            rpn_losses, proposal_list = self.rpn_head.forward_train(
-                x,
-                img_metas,
-                gt_bboxes,
-                gt_labels=None,
-                gt_bboxes_ignore=gt_bboxes_ignore,
-                proposal_cfg=proposal_cfg)
-            losses.update(rpn_losses)
+    if self.with_rpn:
+        proposal_cfg = self.train_cfg.get('rpn_proposal',
+                                          self.test_cfg.rpn)
+        rpn_losses, proposal_list = self.rpn_head.forward_train(
+            x,
+            img_metas,
+            gt_bboxes,
+            gt_labels=None,
+            gt_bboxes_ignore=gt_bboxes_ignore,
+            proposal_cfg=proposal_cfg)
+        losses.update(rpn_losses)
         else:
             proposal_list = proposals
 
-        roi_losses = self.roi_head.forward_train(x, img_metas, proposal_list,
-                                                 gt_bboxes, gt_labels,
-                                                 gt_bboxes_ignore, gt_masks,
-                                                 **kwargs)
-        losses.update(roi_losses)
+            roi_losses = self.roi_head.forward_train(x, img_metas, proposal_list,
+                                                     gt_bboxes, gt_labels,
+                                                     gt_bboxes_ignore, gt_masks,
+                                                     **kwargs)
+            losses.update(roi_losses)
 
-        return losses
+            return losses
 ```
 
 
@@ -537,29 +537,29 @@ def forward(self, img, img_metas, return_loss=True, **kwargs):
         
 
 ```python
-    def forward_train(self,
-                      x,
-                      img, 
-                      img_metas,
-                      gt_bboxes,
-                      gt_labels=None,
-                      gt_bboxes_ignore=None,
-                      proposal_cfg=None,
-                      **kwargs):
+def forward_train(self,
+                  x,
+                  img, 
+                  img_metas,
+                  gt_bboxes,
+                  gt_labels=None,
+                  gt_bboxes_ignore=None,
+                  proposal_cfg=None,
+                  **kwargs):
 
-        outs = self(x)
+    outs = self(x)
 
-        if gt_labels is None:
-            loss_inputs = outs + (gt_bboxes, img_metas)
+    if gt_labels is None:
+        loss_inputs = outs + (gt_bboxes, img_metas)
         else:
 
             loss_inputs = outs + (gt_bboxes, gt_labels, img_metas)
-        losses = self.loss(*loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore)
-        if proposal_cfg is None:
-            return losses
-        else:
-            proposal_list = self.get_bboxes(*outs, img_metas, cfg=proposal_cfg)
-            return losses, proposal_list
+            losses = self.loss(*loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore)
+            if proposal_cfg is None:
+                return losses
+            else:
+                proposal_list = self.get_bboxes(*outs, img_metas, cfg=proposal_cfg)
+                return losses, proposal_list
 
 ```
 
@@ -568,8 +568,8 @@ def forward(self, img, img_metas, return_loss=True, **kwargs):
 来看看 `AnchorHead` 的 forward 函数，你又会发现它调用了 `forward_single` 这个函数
 
 ```python
-    def forward(self, feats):
-        return multi_apply(self.forward_single, feats)
+def forward(self, feats):
+    return multi_apply(self.forward_single, feats)
 ```
 
 
@@ -577,16 +577,16 @@ def forward(self, img, img_metas, return_loss=True, **kwargs):
 然而 `AnchorHead` 这个类里面没有写这个函数，别急，它在 `RetinaHead` 里面，绕来绕去绕了很多，不过，有了这些分析之后你就会发现，以后修改类似的 head 时就只需要修改顶层的 `forward_single` 函数了，其他的大家都一样
 
 ```python
-    def forward_single(self, x):
-        cls_feat = x
-        reg_feat = x
-        for cls_conv in self.cls_convs:
-            cls_feat = cls_conv(cls_feat)
+def forward_single(self, x):
+    cls_feat = x
+    reg_feat = x
+    for cls_conv in self.cls_convs:
+        cls_feat = cls_conv(cls_feat)
         for reg_conv in self.reg_convs:
             reg_feat = reg_conv(reg_feat)
-        cls_score = self.retina_cls(cls_feat)
-        bbox_pred = self.retina_reg(reg_feat)
-        return cls_score, bbox_pred
+            cls_score = self.retina_cls(cls_feat)
+            bbox_pred = self.retina_reg(reg_feat)
+            return cls_score, bbox_pred
 ```
 
 
@@ -598,29 +598,29 @@ def forward(self, img, img_metas, return_loss=True, **kwargs):
 另外，以 Faster RCNN 来分析一下二阶段的算法前向流程，二阶段会复杂点，有很多 head，比如  rpn_head 是 `RPNHead`，roi_head 是 `StandardRoIHead`，按照前面的分析，先让 rpn_head 前向，再让 roi_head 前向。在 `RPNHEAD` 里面没有找到 `forward_train` 函数，一路找过去，还是在 `BaseDenseHead` 里面找到，所以还是得找到哪里实现了 forward 函数，哪里实现了 loss 函数
 
 ```python
-    def forward_train(self,
-                      x,
-                      img, 
-                      img_metas,
-                      gt_bboxes,
-                      gt_labels=None,
-                      gt_bboxes_ignore=None,
-                      proposal_cfg=None,
-                      **kwargs):
+def forward_train(self,
+                  x,
+                  img, 
+                  img_metas,
+                  gt_bboxes,
+                  gt_labels=None,
+                  gt_bboxes_ignore=None,
+                  proposal_cfg=None,
+                  **kwargs):
 
-        outs = self(x)
+    outs = self(x)
 
-        if gt_labels is None:
-            loss_inputs = outs + (gt_bboxes, img_metas)
+    if gt_labels is None:
+        loss_inputs = outs + (gt_bboxes, img_metas)
         else:
 
             loss_inputs = outs + (gt_bboxes, gt_labels, img_metas)
-        losses = self.loss(*loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore)
-        if proposal_cfg is None:
-            return losses
-        else:
-            proposal_list = self.get_bboxes(*outs, img_metas, cfg=proposal_cfg)
-            return losses, proposal_list
+            losses = self.loss(*loss_inputs, gt_bboxes_ignore=gt_bboxes_ignore)
+            if proposal_cfg is None:
+                return losses
+            else:
+                proposal_list = self.get_bboxes(*outs, img_metas, cfg=proposal_cfg)
+                return losses, proposal_list
 ```
 
 
@@ -628,13 +628,13 @@ def forward(self, img, img_metas, return_loss=True, **kwargs):
 有了前面的分析，这个也不难，在 `AnchorHead`  中找到了 forward 函数，并且也有 forward_single 函数
 
 ```python
-    def forward_single(self, x):
-        cls_score = self.conv_cls(x)
-        bbox_pred = self.conv_reg(x)
-        return cls_score, bbox_pred
+def forward_single(self, x):
+    cls_score = self.conv_cls(x)
+    bbox_pred = self.conv_reg(x)
+    return cls_score, bbox_pred
 
-    def forward(self, feats):
-        return multi_apply(self.forward_single, feats)
+def forward(self, feats):
+    return multi_apply(self.forward_single, feats)
 ```
 
 
@@ -642,13 +642,13 @@ def forward(self, img, img_metas, return_loss=True, **kwargs):
 但是这还不行，因为 `RPNHead` 重写了 forward_single 函数，所以要以 `RPNHead`  中的 forward_single 为准，发现没有，好像二阶段各种算法也就只修改了 forward_single 这个函数，和一阶段是一样的
 
 ```python
-    def forward_single(self, x):
-        """Forward feature map of a single scale level."""
-        x = self.rpn_conv(x)
-        x = F.relu(x, inplace=True)
-        rpn_cls_score = self.rpn_cls(x)
-        rpn_bbox_pred = self.rpn_reg(x)
-        return rpn_cls_score, rpn_bbox_pred
+def forward_single(self, x):
+    """Forward feature map of a single scale level."""
+    x = self.rpn_conv(x)
+    x = F.relu(x, inplace=True)
+    rpn_cls_score = self.rpn_cls(x)
+    rpn_bbox_pred = self.rpn_reg(x)
+    return rpn_cls_score, rpn_bbox_pred
 ```
 
 
@@ -656,14 +656,14 @@ def forward(self, img, img_metas, return_loss=True, **kwargs):
 `StandardRoIHead` 接收 `RPNHead` 得到的 proposals 继续前向，经过 RoIPooling 得到大小相同的 RoI，然后进行分类回归得到最终输出，这个直接就在顶层类实现了，所以不用跳着找
 
 ```python
-    def forward_train(self,
-                      x,
-                      img_metas,
-                      proposal_list,
-                      gt_bboxes,
-                      gt_labels,
-                      gt_bboxes_ignore=None,
-                      gt_masks=None):
+def forward_train(self,
+                  x,
+                  img_metas,
+                  proposal_list,
+                  gt_bboxes,
+                  gt_labels,
+                  gt_bboxes_ignore=None,
+                  gt_masks=None):
 ```
 
 

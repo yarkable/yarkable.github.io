@@ -18,10 +18,10 @@ sidebar-avatar: /img/self-introduce.jpg      # use absolute URL, seeing it's use
 
 # SNS settings
 RSS: false
-weibo_username:     5532339354
-zhihu_username:     li-zhi-12-92
+# weibo_username:     5532339354
+# zhihu_username:     li-zhi-12-92
 github_username:    yarkable
-jianshu_username:   5e14129c4ad7
+# jianshu_username:   5e14129c4ad7
 
 
 
@@ -115,6 +115,9 @@ friends: [
     },{
         title: "PRIN",
         href: "https://printempw.github.io/"
+    },{
+        title: "JosonChan",
+        href: "https://josonchan1998.github.io/"
     }
 ]
 

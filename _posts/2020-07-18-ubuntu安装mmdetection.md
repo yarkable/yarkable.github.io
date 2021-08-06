@@ -668,6 +668,183 @@ def forward_train(self,
 
 
 
+### 前向过程
+
+
+
+model 在 forward 之后出来会有个 loss，mmdetection 老版本是在 `mmdet/apis/train.py` 里面运用 `batch_processor` 来将这些 loss 解析成单个 loss，新版本的 mmdet 已经将 `batch_processor` 弃用了，用了 `train_step` 和 `val_step` 来代替，这两个函数在 `models/detectors/base.py` 里面。
+
+```python
+def train_step(self, data, optimizer):
+    losses = self(**data)
+    loss, log_vars = self._parse_losses(losses)
+
+    outputs = dict(
+        loss=loss, log_vars=log_vars, num_samples=len(data['img_metas']))
+
+    return outputs
+
+def _parse_losses(self, losses):
+
+    log_vars = ORDERED_DICT
+    for loss_name, loss_value in losses.items():
+        if isinstance(loss_value, torch.Tensor):
+            log_vars[loss_name] = loss_value.mean()
+        elif isinstance(loss_value, list):
+            log_vars[loss_name] = sum(_loss.mean() for _loss in loss_value)
+        else:
+            raise TypeError(
+                f'{loss_name} is not a tensor or list of tensors')
+
+    loss = sum(_value for _key, _value in log_vars.items()
+               if 'loss' in _key)
+
+    log_vars['loss'] = loss
+    for loss_name, loss_value in log_vars.items():
+        if dist.is_available() and dist.is_initialized():
+            loss_value = loss_value.data.clone()
+            dist.all_reduce(loss_value.div_(dist.get_world_size()))
+        log_vars[loss_name] = loss_value.item()
+
+    return loss, log_vars
+```
+
+
+
+## 训练自己的数据集
+
+
+
+### VOC-style
+
+我有一个 HumanParts 数据集，它的标注格式是符合 VOC 的，但是跟 VOC 又不是完全一样，有些变动，为了在 mmdetection 上训练这个数据集，我需要在 dataset 模块中新注册一个类，首先我的数据集的拓扑是下面这样子的，图片在 Images 里面，标注在 Annotation 里面，训练集和测试集的分类 txt 文件在 ImageSets 里面，和 VOC 的命名不是太一样。
+
+```txt
+├── Annotations
+├── Images
+├── ImageSets
+├── Json_Annos
+└── tools
+```
+
+
+
+在 dataset 中可以看到 VOC 是继承了 `XMLDataset` ，
+
+```python
+@DATASETS.register_module()
+class VOCDataset(XMLDataset):
+```
+
+那我们也新建一个类继承 `XMLDataset`，并且把数据集的类别写进 CLASSES
+
+```python
+@DATASETS.register_module()
+class HumanPartsDataset(XMLDataset):
+    CLASSES = ('face', 'person', 'hand')
+```
+
+然后再看看 xml 格式的标注是怎么被 load 进来的，在 `XMLDataset` 中有 `load_annotations` 方法，可以看到，他是默认按照标准 VOC 存放文件的位置来写这个函数的
+
+```python
+    def load_annotations(self, ann_file):
+        data_infos = []
+        img_ids = mmcv.list_from_file(ann_file)
+        for img_id in img_ids:
+            filename = f'JPEGImages/{img_id}.jpg'
+            xml_path = osp.join(self.img_prefix, 'Annotations',
+                                f'{img_id}.xml')
+            tree = ET.parse(xml_path)
+            root = tree.getroot()
+            size = root.find('size')
+            if size is not None:
+                width = int(size.find('width').text)
+                height = int(size.find('height').text)
+            else:
+                img_path = osp.join(self.img_prefix, 'JPEGImages',
+                                    '{}.jpg'.format(img_id))
+                img = Image.open(img_path)
+                width, height = img.size
+            data_infos.append(
+                dict(id=img_id, filename=filename, width=width, height=height))
+
+        return data_infos
+```
+
+所以我们在新的类里面要重写这个函数，把 path 换成我们自己的。到这儿其实就差不多了，但是类里面还有个 `self.ds_name` 成员，这个是用来确实每个类对应的名称的，在 evaluation 的时候会用到，如果 `self.ds_name` 错了的话，就默认会使用类里面自定义的 CLASSES，这个在哪里改呢，在 `mmdet/core/evaluation/class_names.py` 里面修改，这里面写上了所有数据集对应的类别名称。
+
+```python
+def humanparts_classes():
+    return [
+        'face', 'person', 'hand',
+    ]
+
+dataset_aliases = {
+    'voc': ['voc', 'pascal_voc', 'voc07', 'voc12'],
+    'imagenet_det': ['det', 'imagenet_det', 'ilsvrc_det'],
+    'imagenet_vid': ['vid', 'imagenet_vid', 'ilsvrc_vid'],
+    'coco': ['coco', 'mscoco', 'ms_coco'],
+    'wider_face': ['WIDERFaceDataset', 'wider_face', 'WIDERFace'],
+    'cityscapes': ['cityscapes'],
+    'humanparts': ['humanparts'],
+}
+
+def get_classes(dataset):
+    """Get class names of a dataset."""
+    alias2name = {}
+    for name, aliases in dataset_aliases.items():
+        for alias in aliases:
+            alias2name[alias] = name
+
+    if mmcv.is_str(dataset):
+        if dataset in alias2name:
+            labels = eval(alias2name[dataset] + '_classes()')
+        else:
+            raise ValueError(f'Unrecognized dataset: {dataset}')
+    else:
+        raise TypeError(f'dataset must a str, but got {type(dataset)}')
+    return labels
+```
+
+然后对检测器添加 config 就行了，一个样例如下：
+
+```python
+dataset_type = 'HumanPartsDataset'
+data_root = '/kevin_data/Human-Parts/'
+img_norm_cfg = dict(
+    mean=[127.5, 127.5, 127.5], std=[1.0, 1.0, 1.0], to_rgb=True)
+train_pipeline = [
+    ...
+]
+test_pipeline = [
+	...
+]
+data = dict(
+    samples_per_gpu=16,
+    workers_per_gpu=8,
+    train=dict(
+        type='RepeatDataset',
+        times=3,
+        dataset=dict(
+            type=dataset_type,
+            ann_file=data_root + 'ImageSets/privpersonpart_train.txt',
+            img_prefix=data_root,
+            pipeline=train_pipeline)),
+    val=dict(
+        type=dataset_type,
+        ann_file=data_root + 'ImageSets/privpersonpart_val.txt',
+        img_prefix=data_root,
+        pipeline=test_pipeline),
+    test=dict(
+        type=dataset_type,
+        ann_file=data_root + 'ImageSets/privpersonpart_val.txt',
+        img_prefix=data_root,
+        pipeline=test_pipeline))
+evaluation = dict(interval=1, metric='mAP')
+```
+
+最后注意，训练的时候还得把 `bbox_head` 的 `num_classes` 变成相应的类别数，比如这里就是 3 而不是 80.
+
 
 
 ## 一些比较好的教程

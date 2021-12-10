@@ -297,6 +297,18 @@ python tools/analyze_logs.py plot_curve [--keys ${KEYS}] [--title ${TITLE}] [--l
 
 ![option_analyze_logs](https://i.loli.net/2020/10/08/3dvQpZI5aTnPybx.png)
 
+
+
+
+
+#### browse_dataset 可视化数据集
+
+
+
+想要可视化数据集的标注是否正确时，可以用这个脚本，默认会画出所给的 config 文件的训练集的标注，很方便
+
+
+
 ## 修改代码
 
 
@@ -846,6 +858,18 @@ evaluation = dict(interval=1, metric='mAP')
 最后注意，训练的时候还得把 `bbox_head` 的 `num_classes` 变成相应的类别数，比如这里就是 3 而不是 80.
 
 
+
+## 制作自己的数据集在mmdet中训练
+
+
+
+TODO 有空再补
+
+[labelme转coco数据集 - 一届书生 - 博客园 (cnblogs.com)](https://www.cnblogs.com/52dxer/p/15408027.html)
+
+[使用mmdetection训练自己的coco数据集(免费分享自制数据集文件) - 一届书生 - 博客园 (cnblogs.com)](https://www.cnblogs.com/52dxer/p/15411227.html)
+
+[(25条消息) 将mmdetection产生的coco(json)格式的测试结果转化成VisDrone19官网所需要的txt格式文件（还包括无标签测试图片产生mmdet所需要的test.json方法）_五指峰的博客-CSDN博客_mmdetection生成测试结果json文件](https://blog.csdn.net/qq_42597373/article/details/118494997)
 
 ## 一些比较好的教程
 

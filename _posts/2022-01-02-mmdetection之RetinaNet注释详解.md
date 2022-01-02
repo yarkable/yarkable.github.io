@@ -1,8 +1,8 @@
 ---
 layout: post
-title: ubuntu安装mmdetection
+title: mmdetection之RetinaNet注释详解
 subtitle: 
-date: 2020-07-18
+date: 2022-01-02
 author: kevin
 header-img: img/green-bg.jpg
 catalog: true
@@ -10,6 +10,7 @@ tags:
     - linux
     - object detection
     - deep learning
+    - mmdetection
 ---
 
 

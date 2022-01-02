@@ -100,7 +100,6 @@ def loss(self,
         featmap_sizes, img_metas, device=device)
     label_channels = self.cls_out_channels if self.use_sigmoid_cls else 1
     # get_targets 获取到所有 anchor 被匹配到的 gt_box 的偏移以及对应的类别信息
-    # TODO
     cls_reg_targets = self.get_targets(
         anchor_list,
         valid_flag_list,
@@ -152,6 +151,69 @@ def loss(self,
 
 
 
+
+## loss_single
+
+
+
+loss_single 以特征图为单位计算每个特征图上的 loss，然后再通过 `multi_apply` 汇总到 loss 函数里面得到最后的 loss
+
+```python
+def loss_single(self, cls_score, bbox_pred, anchors, labels, label_weights,
+                bbox_targets, bbox_weights, num_total_samples):
+    """Compute loss of a single scale level.
+
+    Args:
+        cls_score (Tensor): Box scores for each scale level
+            Has shape (N, num_anchors * num_classes, H, W).
+        bbox_pred (Tensor): Box energies / deltas for each scale
+            level with shape (N, num_anchors * 4, H, W).
+        anchors (Tensor): Box reference for each scale level with shape
+            (N, num_total_anchors, 4).
+        labels (Tensor): Labels of each anchors with shape
+            (N, num_total_anchors).
+        label_weights (Tensor): Label weights of each anchor with shape
+            (N, num_total_anchors)
+        bbox_targets (Tensor): BBox regression targets of each anchor wight
+            shape (N, num_total_anchors, 4).
+        bbox_weights (Tensor): BBox regression loss weights of each anchor
+            with shape (N, num_total_anchors, 4).
+        num_total_samples (int): If sampling, num total samples equal to
+            the number of total anchors; Otherwise, it is the number of
+            positive anchors.
+
+    Returns:
+        dict[str, Tensor]: A dictionary of loss components.
+    """
+    # classification loss
+    # 正样本和负样本参与计算分类 loss
+    labels = labels.reshape(-1)
+    label_weights = label_weights.reshape(-1)
+    cls_score = cls_score.permute(0, 2, 3,
+                                  1).reshape(-1, self.cls_out_channels)
+    loss_cls = self.loss_cls(
+        cls_score, labels, label_weights, avg_factor=num_total_samples)
+    # regression loss
+    # 正样本参与计算回归 loss
+    bbox_targets = bbox_targets.reshape(-1, 4)
+    bbox_weights = bbox_weights.reshape(-1, 4)
+    bbox_pred = bbox_pred.permute(0, 2, 3, 1).reshape(-1, 4)
+    # 如果需要回归解码后的坐标的话，就根据当前位置的 anchor 解码出坐标，与 gt 做 loss
+    # RetinaNet 里面默认是 False
+    if self.reg_decoded_bbox:
+        # When the regression loss (e.g. `IouLoss`, `GIouLoss`)
+        # is applied directly on the decoded bounding boxes, it
+        # decodes the already encoded coordinates to absolute format.
+        anchors = anchors.reshape(-1, 4)
+        bbox_pred = self.bbox_coder.decode(anchors, bbox_pred)
+    loss_bbox = self.loss_bbox(
+        bbox_pred,
+        bbox_targets,
+        bbox_weights,
+        avg_factor=num_total_samples)
+
+    return loss_cls, loss_bbox
+```
 
 ## get_anchors
 
@@ -397,6 +459,8 @@ if gt_labels_list is None:
     gt_labels_list = [None for _ in range(num_imgs)]
 
 # 调用 _get_target_single 得到每一张图的标签
+# multi_apply 返回一个 tuple，results 中很多元素都是 list，
+# list 中每个元素代表了该图片中的一些信息
 results = multi_apply(
     self._get_targets_single,
     concat_anchor_list,
@@ -414,9 +478,13 @@ rest_results = list(results[7:])  # user-added return values
 if any([labels is None for labels in all_labels]):
     return None
 # sampled anchors of all images
+# 得到一个 batch 中所有的正样本数目和负样本数目
 num_total_pos = sum([max(inds.numel(), 1) for inds in pos_inds_list])
 num_total_neg = sum([max(inds.numel(), 1) for inds in neg_inds_list])
 # split targets to a list w.r.t. multiple levels
+# 然后用 image_to_level 根据每一层特征图上 anchor 的数量将图片级别的标签转成特征图级别的标签
+# labels_list: List[Tensor]
+# [torch.Size([16, 136800]), torch.Size([16, 34200]), torch.Size([16, 8550]), torch.Size([16, 2223]), torch.Size([16, 630])]
 labels_list = images_to_levels(all_labels, num_level_anchors)
 label_weights_list = images_to_levels(all_label_weights,
                                       num_level_anchors)
@@ -426,6 +494,7 @@ bbox_weights_list = images_to_levels(all_bbox_weights,
                                      num_level_anchors)
 res = (labels_list, label_weights_list, bbox_targets_list,
        bbox_weights_list, num_total_pos, num_total_neg)
+# sampling_results_list 包含了每张图中的正负样本信息等等
 if return_sampling_results:
     res = res + (sampling_results_list, )
 for i, r in enumerate(rest_results):  # user-added return values
@@ -482,57 +551,81 @@ def _get_targets_single(self,
             num_total_neg (int): Number of negative samples in all images
     """
     # 判断 anchor 是否越界
+    # ipdb> flat_anchors.shape
+	# torch.Size([182403, 4])
+    # ipdb> anchors.shape
+	# torch.Size([163206, 4])
     inside_flags = anchor_inside_flags(flat_anchors, valid_flags,
                                        img_meta['img_shape'][:2],
                                        self.train_cfg.allowed_border)
     if not inside_flags.any():
         return (None, ) * 7
     # assign gt and sample anchors
+    # 这里会筛掉一些越界的 anchor 
+    # 关系式：flat_anchors = anchors + 越界 anchors
+    # anchors = pos_anchors + neg_anchors
     anchors = flat_anchors[inside_flags, :]
 
     # 对 anchor 和 gt_bboxes 进行一一匹配得到 sample
-    # TODO
+    # 得到正负样本，每一个 anchor 匹配的 gt index 
     assign_result = self.assigner.assign(
         anchors, gt_bboxes, gt_bboxes_ignore,
         None if self.sampling else gt_labels)
     # 对结果进行包装，如果没有 self.sampler 的话就是用 PseudoSampler
     sampling_result = self.sampler.sample(assign_result, anchors,
                                           gt_bboxes)
-
+	
+    # 这张图片中没有越界的 anchor 的数量
     num_valid_anchors = anchors.shape[0]
     bbox_targets = torch.zeros_like(anchors)
     bbox_weights = torch.zeros_like(anchors)
+    # 首先将每个 anchor 的类别都置为背景，权重置为 0 
     labels = anchors.new_full((num_valid_anchors, ),
                               self.num_classes,
                               dtype=torch.long)
     label_weights = anchors.new_zeros(num_valid_anchors, dtype=torch.float)
-
+	
+    # 得到正负样本的 index （负样本为 IOU>0 并且 < 0.4，所以没有和 gt 交界的 anchor 这里没有包括）
     pos_inds = sampling_result.pos_inds
     neg_inds = sampling_result.neg_inds
     if len(pos_inds) > 0:
+        # 如果回归的坐标不是解码过后的坐标（format: x1,y1,x2,y2）
+        # 就对正样本 anchor 的坐标和 gt_bboxes 进行编码 normalize
         if not self.reg_decoded_bbox:
             pos_bbox_targets = self.bbox_coder.encode(
+                # 这两个指的是正样本 anchor 的坐标，正样本匹配的（需要回归的）gt_bbox 的坐标
+                # shape 都是 [pos_anchors, 4]
                 sampling_result.pos_bboxes, sampling_result.pos_gt_bboxes)
         else:
+            # 回归解码坐标的话，targets 就是每个 anchor 匹配的 gt_bbox 坐标
             pos_bbox_targets = sampling_result.pos_gt_bboxes
+        # 给正样本回归目标赋值
         bbox_targets[pos_inds, :] = pos_bbox_targets
+        # 给正样本回归权重赋值，所以只有正样本参与计算 bbox_loss
+        # 负样本和越界的 anchor 都没有参加，因为权重是 0
         bbox_weights[pos_inds, :] = 1.0
         if gt_labels is None:
             # Only rpn gives gt_labels as None
             # Foreground is the first class since v2.5.0
             labels[pos_inds] = 0
         else:
+            # 给正样本分类目标赋值
             labels[pos_inds] = gt_labels[
                 sampling_result.pos_assigned_gt_inds]
         if self.train_cfg.pos_weight <= 0:
+            # 给正样本分类权重赋值
             label_weights[pos_inds] = 1.0
         else:
             label_weights[pos_inds] = self.train_cfg.pos_weight
     if len(neg_inds) > 0:
+        # 给负样本分类权重赋值，所以正负样本都会参与计算 loss
+        # 但是越界的那些 anchor 就没有参加，因为它们的 loss 权重是 0
         label_weights[neg_inds] = 1.0
 
     # map up to original set of anchors
     if unmap_outputs:
+        # 给越界的 anchor 也贴上标签，分类标签赋值为背景，回归标签赋值为 0
+        # 这样的话每次 get_targets 得到的 anchor 数量还是一样的
         num_total_anchors = flat_anchors.size(0)
         labels = unmap(
             labels, num_total_anchors, inside_flags,
@@ -661,7 +754,8 @@ def assign(self, bboxes, gt_bboxes, gt_bboxes_ignore=None, gt_labels=None):
             gt_bboxes_ignore = gt_bboxes_ignore.cpu()
         if gt_labels is not None:
             gt_labels = gt_labels.cpu()
-
+            
+	# 将 gt_bboxes 和 这张图里面所有的 anchor 进行两两匹配，shape: (num_gt, num_anchor)
     overlaps = self.iou_calculator(gt_bboxes, bboxes)
 
     if (self.ignore_iof_thr > 0 and gt_bboxes_ignore is not None
@@ -675,7 +769,8 @@ def assign(self, bboxes, gt_bboxes, gt_bboxes_ignore=None, gt_labels=None):
                 gt_bboxes_ignore, bboxes, mode='iof')
             ignore_max_overlaps, _ = ignore_overlaps.max(dim=0)
         overlaps[:, ignore_max_overlaps > self.ignore_iof_thr] = -1
-
+	
+    # 根据匹配结果进行包装，同时给 anchor 添加上类别标签
     assign_result = self.assign_wrt_overlaps(overlaps, gt_labels)
     if assign_on_cpu:
         assign_result.gt_inds = assign_result.gt_inds.to(device)
@@ -687,13 +782,174 @@ def assign(self, bboxes, gt_bboxes, gt_bboxes_ignore=None, gt_labels=None):
 
 
 
+## assigner.assign_wrt_overlaps
 
 
 
+这个函数其实起到的是一个包装的作用，在上面已经将 anchor 和 gt 进行了两两匹配，输入的 overlaps 参数的形状就是 (num_gt, num_anchor)，同时也将 gt_bboxes 的类别标签传了进来，
 
-## sampler.sample
 
 
+```python
+def assign_wrt_overlaps(self, overlaps, gt_labels=None):
+    """Assign w.r.t. the overlaps of bboxes with gts.
+
+    Args:
+        overlaps (Tensor): Overlaps between k gt_bboxes and n bboxes,
+            shape(k, n).
+        gt_labels (Tensor, optional): Labels of k gt_bboxes, shape (k, ).
+
+    Returns:
+        :obj:`AssignResult`: The assign result.
+    """
+    num_gts, num_bboxes = overlaps.size(0), overlaps.size(1)
+
+    # 1. assign -1 by default
+    # 第一步，给每一个 anchor box 的匹配的 gt index 都初始化为 -1    
+    # shape：torch.Size([163206])
+    assigned_gt_inds = overlaps.new_full((num_bboxes, ),
+                                         -1,
+                                         dtype=torch.long)
+
+    if num_gts == 0 or num_bboxes == 0:
+        # No ground truth or boxes, return empty assignment
+        max_overlaps = overlaps.new_zeros((num_bboxes, ))
+        if num_gts == 0:
+            # No truth, assign everything to background
+            assigned_gt_inds[:] = 0
+        if gt_labels is None:
+            assigned_labels = None
+        else:
+            assigned_labels = overlaps.new_full((num_bboxes, ),
+                                                -1,
+                                                dtype=torch.long)
+        return AssignResult(
+            num_gts,
+            assigned_gt_inds,
+            max_overlaps,
+            labels=assigned_labels)
+
+    # for each anchor, which gt best overlaps with it
+    # for each anchor, the max iou of all gts
+    # 找到每一个 anchor 对应的最大 IoU 的 gt_bboxes
+    # 记录下每一个 anchor 最大的 IoU 和对应 gt_bboxes 的 index
+    max_overlaps, argmax_overlaps = overlaps.max(dim=0)
+    # for each gt, which anchor best overlaps with it
+    # for each gt, the max iou of all proposals
+    # 记录下每一个 gt 和所有 anchor 最大的 IoU 和对应 anchor 的 index
+    gt_max_overlaps, gt_argmax_overlaps = overlaps.max(dim=1)
+
+    # 2. assign negative: below
+    # the negative inds are set to be 0
+    # 匹配 0 的话就是负样本
+    if isinstance(self.neg_iou_thr, float):
+        assigned_gt_inds[(max_overlaps >= 0)
+                         & (max_overlaps < self.neg_iou_thr)] = 0
+    elif isinstance(self.neg_iou_thr, tuple):
+        assert len(self.neg_iou_thr) == 2
+        assigned_gt_inds[(max_overlaps >= self.neg_iou_thr[0])
+                         & (max_overlaps < self.neg_iou_thr[1])] = 0
+
+    # 3. assign positive: above positive IoU threshold
+    pos_inds = max_overlaps >= self.pos_iou_thr
+    # 这里的 +1 是一个 trick，意义上来说的话是所有 positive anchor 匹配第几个 gt
+    # +1 就把这些值全部搞成正的了，方便后面根据匹配的是不是大于 0 对负样本和背景进行筛除
+    assigned_gt_inds[pos_inds] = argmax_overlaps[pos_inds] + 1
+
+    if self.match_low_quality:
+        # Low-quality matching will overwrite the assigned_gt_inds assigned
+        # in Step 3. Thus, the assigned gt might not be the best one for
+        # prediction.
+        # For example, if bbox A has 0.9 and 0.8 iou with GT bbox 1 & 2,
+        # bbox 1 will be assigned as the best target for bbox A in step 3.
+        # However, if GT bbox 2's gt_argmax_overlaps = A, bbox A's
+        # assigned_gt_inds will be overwritten to be bbox B.
+        # This might be the reason that it is not used in ROI Heads.
+        for i in range(num_gts):
+            if gt_max_overlaps[i] >= self.min_pos_iou:
+                if self.gt_max_assign_all:
+                    max_iou_inds = overlaps[i, :] == gt_max_overlaps[i]
+                    assigned_gt_inds[max_iou_inds] = i + 1
+                else:
+                    assigned_gt_inds[gt_argmax_overlaps[i]] = i + 1
+
+    if gt_labels is not None:
+        # 默认初始化每一个 anchor 的类别为 -1
+        assigned_labels = assigned_gt_inds.new_full((num_bboxes, ), -1)
+        # 这里将所有的正样本的 index 给找了出来
+        pos_inds = torch.nonzero(
+            assigned_gt_inds > 0, as_tuple=False).squeeze()        
+        if pos_inds.numel() > 0:
+            # 给每一个正样本都赋予了类别标签，上面 +1，这里 -1，刚好得到 gt 标签
+            # ipdb> assigned_labels.shape
+			# torch.Size([163206])
+            # ipdb> assigned_labels.unique()
+			# tensor([-1,  0, 48, 52], device='cuda:0')
+			# -1 代表负样本，0 和 0 以上的都是真实标签
+            assigned_labels[pos_inds] = gt_labels[
+                assigned_gt_inds[pos_inds] - 1]
+    else:
+        assigned_labels = None
+
+    return AssignResult(
+        num_gts, assigned_gt_inds, max_overlaps, labels=assigned_labels)
+# class AssignResult(util_mixins.NiceRepr):
+#     def __init__(self, num_gts, gt_inds, max_overlaps, labels=None):
+```
+
+
+
+## AssignResult
+
+
+
+这个就是储存了一下 assign 的结果，方便调用，没有什么实际作用
+
+```python
+class AssignResult(util_mixins.NiceRepr):
+    """Stores assignments between predicted and truth boxes.
+
+    Attributes:
+        num_gts (int): the number of truth boxes considered when computing this
+            assignment
+
+        gt_inds (LongTensor): for each predicted box indicates the 1-based
+            index of the assigned truth box. 0 means unassigned and -1 means
+            ignore.
+
+        max_overlaps (FloatTensor): the iou between the predicted box and its
+            assigned truth box.
+
+        labels (None | LongTensor): If specified, for each predicted box
+            indicates the category label of the assigned truth box.
+
+    Example:
+        >>> # An assign result between 4 predicted boxes and 9 true boxes
+        >>> # where only two boxes were assigned.
+        >>> num_gts = 9
+        >>> max_overlaps = torch.LongTensor([0, .5, .9, 0])
+        >>> gt_inds = torch.LongTensor([-1, 1, 2, 0])
+        >>> labels = torch.LongTensor([0, 3, 4, 0])
+        >>> self = AssignResult(num_gts, gt_inds, max_overlaps, labels)
+        >>> print(str(self))  # xdoctest: +IGNORE_WANT
+        <AssignResult(num_gts=9, gt_inds.shape=(4,), max_overlaps.shape=(4,),
+                      labels.shape=(4,))>
+        >>> # Force addition of gt labels (when adding gt as proposals)
+        >>> new_labels = torch.LongTensor([3, 4, 5])
+        >>> self.add_gt_(new_labels)
+        >>> print(str(self))  # xdoctest: +IGNORE_WANT
+        <AssignResult(num_gts=9, gt_inds.shape=(7,), max_overlaps.shape=(7,),
+                      labels.shape=(7,))>
+    """
+
+    def __init__(self, num_gts, gt_inds, max_overlaps, labels=None):
+        self.num_gts = num_gts
+        self.gt_inds = gt_inds
+        self.max_overlaps = max_overlaps
+        self.labels = labels
+        # Interface for possible user-defined properties
+        self._extra_properties = {}
+```
 
 
 
@@ -735,3 +991,228 @@ class BboxOverlaps2D(object):
             bboxes1 = bboxes1[..., :4]
         return bbox_overlaps(bboxes1, bboxes2, mode, is_aligned)
 ```
+
+
+
+
+
+## sampler.sample
+
+
+
+RetinaNet 中并没有是用 sampling ，为了让接口统一，所以就用了一个假的 Sampler 代替，其实没有改变 assign_result 的结果
+
+```python
+@BBOX_SAMPLERS.register_module()
+class PseudoSampler(BaseSampler):
+    """A pseudo sampler that does not do sampling actually."""
+
+    def __init__(self, **kwargs):
+        pass
+    
+    def sample(self, assign_result, bboxes, gt_bboxes, **kwargs):
+        """Directly returns the positive and negative indices  of samples.
+
+        Args:
+            assign_result (:obj:`AssignResult`): Assigned results
+            bboxes (torch.Tensor): Bounding boxes
+            gt_bboxes (torch.Tensor): Ground truth boxes
+
+        Returns:
+            :obj:`SamplingResult`: sampler results
+        """
+        # 得到正负样本 anchor 的 index
+        pos_inds = torch.nonzero(
+            assign_result.gt_inds > 0, as_tuple=False).squeeze(-1).unique()
+        neg_inds = torch.nonzero(
+            assign_result.gt_inds == 0, as_tuple=False).squeeze(-1).unique()
+        gt_flags = bboxes.new_zeros(bboxes.shape[0], dtype=torch.uint8)
+        # 进行封装，方便调用 sampling_result
+        sampling_result = SamplingResult(pos_inds, neg_inds, bboxes, gt_bboxes,
+                                         assign_result, gt_flags)
+        return sampling_result
+```
+
+
+
+## SamplingResult
+
+
+
+进行封装 sampling 的结果
+
+
+
+```python
+class SamplingResult(util_mixins.NiceRepr):
+    """Bbox sampling result.
+
+    Example:
+        >>> # xdoctest: +IGNORE_WANT
+        >>> from mmdet.core.bbox.samplers.sampling_result import *  # NOQA
+        >>> self = SamplingResult.random(rng=10)
+        >>> print(f'self = {self}')
+        self = <SamplingResult({
+            'neg_bboxes': torch.Size([12, 4]),
+            'neg_inds': tensor([ 0,  1,  2,  4,  5,  6,  7,  8,  9, 10, 11, 12]),
+            'num_gts': 4,
+            'pos_assigned_gt_inds': tensor([], dtype=torch.int64),
+            'pos_bboxes': torch.Size([0, 4]),
+            'pos_inds': tensor([], dtype=torch.int64),
+            'pos_is_gt': tensor([], dtype=torch.uint8)
+        })>
+    """
+
+    def __init__(self, pos_inds, neg_inds, bboxes, gt_bboxes, assign_result,
+                 gt_flags):
+        self.pos_inds = pos_inds
+        self.neg_inds = neg_inds
+        self.pos_bboxes = bboxes[pos_inds]
+        self.neg_bboxes = bboxes[neg_inds]
+        self.pos_is_gt = gt_flags[pos_inds]
+
+        self.num_gts = gt_bboxes.shape[0]
+        self.pos_assigned_gt_inds = assign_result.gt_inds[pos_inds] - 1
+
+        if gt_bboxes.numel() == 0:
+            # hack for index error case
+            assert self.pos_assigned_gt_inds.numel() == 0
+            self.pos_gt_bboxes = torch.empty_like(gt_bboxes).view(-1, 4)
+        else:
+            if len(gt_bboxes.shape) < 2:
+                gt_bboxes = gt_bboxes.view(-1, 4)
+
+            self.pos_gt_bboxes = gt_bboxes[self.pos_assigned_gt_inds, :]
+
+        if assign_result.labels is not None:
+            self.pos_gt_labels = assign_result.labels[pos_inds]
+        else:
+            self.pos_gt_labels = None
+```
+
+
+
+
+
+## bbox_coder.encode & bbox2delta
+
+
+
+这个是从 Faster RCNN 开始就祖传的 box 编码，RetinaNet 也继续沿用 `DeltaXYWHBBoxCoder` 编码器，也就是说网络学习的目标为正样本到 gt_bbox 所需要的偏移量
+
+```python
+bbox_coder=dict(
+    type='DeltaXYWHBBoxCoder',
+    target_means=[.0, .0, .0, .0],
+    target_stds=[1.0, 1.0, 1.0, 1.0]),
+```
+
+
+
+所以 encode 函数就将 anchor 和 匹配的 gt_bbox 的差距进行编码，让网络学习，实际上调用的就是 `bbox2delta` 这个函数
+
+```python
+def encode(self, bboxes, gt_bboxes):
+    """Get box regression transformation deltas that can be used to
+    transform the ``bboxes`` into the ``gt_bboxes``.
+
+    Args:
+        bboxes (torch.Tensor): Source boxes, e.g., object proposals.
+        gt_bboxes (torch.Tensor): Target of the transformation, e.g.,
+            ground-truth boxes.
+
+    Returns:
+        torch.Tensor: Box transformation deltas
+    """
+
+    assert bboxes.size(0) == gt_bboxes.size(0)
+    assert bboxes.size(-1) == gt_bboxes.size(-1) == 4
+    encoded_bboxes = bbox2delta(bboxes, gt_bboxes, self.means, self.stds)
+    return encoded_bboxes
+
+
+@mmcv.jit(coderize=True)
+def bbox2delta(proposals, gt, means=(0., 0., 0., 0.), stds=(1., 1., 1., 1.)):
+    """Compute deltas of proposals w.r.t. gt.
+
+    We usually compute the deltas of x, y, w, h of proposals w.r.t ground
+    truth bboxes to get regression target.
+    This is the inverse function of :func:`delta2bbox`.
+
+    Args:
+        proposals (Tensor): Boxes to be transformed, shape (N, ..., 4)
+        gt (Tensor): Gt bboxes to be used as base, shape (N, ..., 4)
+        means (Sequence[float]): Denormalizing means for delta coordinates
+        stds (Sequence[float]): Denormalizing standard deviation for delta
+            coordinates
+
+    Returns:
+        Tensor: deltas with shape (N, 4), where columns represent dx, dy,
+            dw, dh.
+    """
+    assert proposals.size() == gt.size()
+
+    proposals = proposals.float()
+    gt = gt.float()
+    # 得到 anchor 的中心点和宽高
+    px = (proposals[..., 0] + proposals[..., 2]) * 0.5
+    py = (proposals[..., 1] + proposals[..., 3]) * 0.5
+    pw = proposals[..., 2] - proposals[..., 0]
+    ph = proposals[..., 3] - proposals[..., 1]
+    
+    # 得到 gt_bboxes 的中心点和宽高
+    gx = (gt[..., 0] + gt[..., 2]) * 0.5
+    gy = (gt[..., 1] + gt[..., 3]) * 0.5
+    gw = gt[..., 2] - gt[..., 0]
+    gh = gt[..., 3] - gt[..., 1]
+	
+    # 进行编码
+    dx = (gx - px) / pw
+    dy = (gy - py) / ph
+    dw = torch.log(gw / pw)
+    dh = torch.log(gh / ph)
+    deltas = torch.stack([dx, dy, dw, dh], dim=-1)
+
+    means = deltas.new_tensor(means).unsqueeze(0)
+    stds = deltas.new_tensor(stds).unsqueeze(0)
+    deltas = deltas.sub_(means).div_(stds)
+
+    return deltas
+```
+
+
+
+## bbox_coder.decode & delta2bbox
+
+
+
+刚好跟 encode 的过程是相反的，根据预测值与对应的 anchor 的坐标解得预测框的真实坐标，这里编码解码的方式可以自定义，但是一定要统一，编码时候对 anchor 怎样操作的解码时就要是一个逆过程
+
+
+
+## umap
+
+
+
+这个函数的作用就是将筛除过的正常 anchor 和被筛除的越界的 anchor 的标签汇合，在数量上变成原来的所有的 anchor，这里就要给这些越界的 anchor 分配背景标签，回归的 box 坐标也全都是 0
+
+```python
+def unmap(data, count, inds, fill=0):
+    """Unmap a subset of item (data) back to the original set of items (of size
+    count)"""
+    if data.dim() == 1:
+        ret = data.new_full((count, ), fill)
+        ret[inds.type(torch.bool)] = data
+    else:
+        # new_size 这个表达妙！
+        new_size = (count, ) + data.size()[1:]
+        ret = data.new_full(new_size, fill)
+        ret[inds.type(torch.bool), :] = data
+    return ret
+```
+
+
+
+
+
+## 完结，撒花

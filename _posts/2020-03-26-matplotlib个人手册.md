@@ -121,10 +121,16 @@ for i in range(gt_bboxes.shape[0]):
     for i in range(pos_points.shape[0]):
         axes[2].scatter(pos_points[i, 0], pos_points[i, 1], s=3,linewidths=1)
         axes[2].set_title("Positive Points")
-        plt.savefig('./show_dirs/bool_mask_with_points{}.png'.format(time.time()))
+        plt.savefig('./show_dirs/bool_mask_with_points{}.png'.format(time.time()), bbox_inches = 'tight')
 ```
 
 
+
+## matplotlib 画图出现重叠
+
+
+
+在 for 循环中调用这个函数时会导致第二次循环时绘制的图是在第一次绘图的基础上绘制的，这就出现了后面保存的图中数据越来越多。该问题主要是 matplotlib 会记录之前的画图，在每次使用完后，应该调用 `plt.clf()` 函数。
 
 
 
@@ -135,3 +141,5 @@ for i in range(gt_bboxes.shape[0]):
 
 
 https://morvanzhou.github.io/tutorials/data-manipulation/plt/
+
+[使用matplotlib绘图时出现数据重复重叠问题_twinkle-zp的博客-CSDN博客](https://blog.csdn.net/muchen123456/article/details/106041525)

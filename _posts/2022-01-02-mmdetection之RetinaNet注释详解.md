@@ -199,7 +199,7 @@ def loss_single(self, cls_score, bbox_pred, anchors, labels, label_weights,
     bbox_weights = bbox_weights.reshape(-1, 4)
     bbox_pred = bbox_pred.permute(0, 2, 3, 1).reshape(-1, 4)
     # 如果需要回归解码后的坐标的话，就根据当前位置的 anchor 解码出坐标，与 gt 做 loss
-    # RetinaNet 里面默认是 False
+    # RetinaNet 里面默认是 False，注意解码之后
     if self.reg_decoded_bbox:
         # When the regression loss (e.g. `IouLoss`, `GIouLoss`)
         # is applied directly on the decoded bounding boxes, it
@@ -585,7 +585,7 @@ def _get_targets_single(self,
                               dtype=torch.long)
     label_weights = anchors.new_zeros(num_valid_anchors, dtype=torch.float)
 	
-    # 得到正负样本的 index （负样本为 IOU>0 并且 < 0.4，所以没有和 gt 交界的 anchor 这里没有包括）
+    # 得到正负样本的 index （负样本为 IOU>=0 并且 < 0.4，）
     pos_inds = sampling_result.pos_inds
     neg_inds = sampling_result.neg_inds
     if len(pos_inds) > 0:
@@ -595,6 +595,7 @@ def _get_targets_single(self,
             pos_bbox_targets = self.bbox_coder.encode(
                 # 这两个指的是正样本 anchor 的坐标，正样本匹配的（需要回归的）gt_bbox 的坐标
                 # shape 都是 [pos_anchors, 4]
+                # 如果 encode 的话会将 pos_bbox_targets 的值 normalize 到（-1，1）之间，所以最小的值不是 0
                 sampling_result.pos_bboxes, sampling_result.pos_gt_bboxes)
         else:
             # 回归解码坐标的话，targets 就是每个 anchor 匹配的 gt_bbox 坐标
@@ -1216,3 +1217,4 @@ def unmap(data, count, inds, fill=0):
 
 
 ## 完结，撒花
+

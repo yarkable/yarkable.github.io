@@ -653,7 +653,7 @@ else:
 
 
 
-在 `base_dense_head.py` 中写了下面代码，我么可以看到，获得 proposal 是通过 head 的 get_bboxes 函数的，也就是测试的阶段。
+在 `base_dense_head.py` 中写了下面代码，我们可以看到，获得 proposal 是通过 head 的 get_bboxes 函数的，也就是测试的阶段。
 
 ```python
 outs = self(x)

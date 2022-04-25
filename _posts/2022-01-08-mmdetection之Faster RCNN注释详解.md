@@ -15,6 +15,7 @@ tags:
 
 
 
+
 ## preface 
 
 
@@ -1356,7 +1357,6 @@ class Shared2FCBBoxHead(ConvFCBBoxHead):
 这是最简单的 ROI_head，只有两个 fc 层用来做分类和回归，上述派生的子类可以在这个基础上实现添加几个卷积之类的改动。总之这里就是前向传播，最终分类分支  `shape: (bs*num_samples, num_class+1)`，回归分支 `shape: (bs*num_samples, 4*num_class)`, 因为 reg_class_agnostic=False
 
 ```python
-
 @HEADS.register_module()
 class BBoxHead(nn.Module):
     """Simplest RoI head, with only two fc layers for classification and

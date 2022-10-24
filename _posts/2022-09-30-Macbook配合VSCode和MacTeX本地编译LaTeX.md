@@ -137,7 +137,11 @@ ln -s /Users/xxx/Library/Mobile\ Documents/com~apple~CloudDocs/ iCloud
 code iCloud/my_work/xxx
 ```
 
+### 其他
 
+
+
+建议在 VSCode 安装一个 Grammly 插件，配合写作效果更佳。
 
 ### reference
 

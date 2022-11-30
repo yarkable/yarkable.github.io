@@ -346,7 +346,9 @@ positional_encoding=dict(
   type='SinePositionalEncoding', num_feats=128, normalize=True),
 ```
 
-见注释 (感觉这里理解的不是很深刻)
+见注释 ~~(感觉这里理解的不是很深刻)~~
+
+> 最后之所以要 concat x 和 y 方向上的 positional encoding 是因为单单 x 的 pe 不能使得每一个像素生成独一无二的 pe，要加上 y 方向的 pe 之后，每一个位置生成的才会是独特的 pe。（例如第一行和第二行的首元素生成的 x 方向的 pe 是一样的，但是他们在 y 方向的 pe 不一样）
 
 ```python
 @POSITIONAL_ENCODING.register_module()

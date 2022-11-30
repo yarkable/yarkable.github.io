@@ -417,7 +417,7 @@ class SinePositionalEncoding(nn.Module):
         x_embed = not_mask.cumsum(2, dtype=torch.float32)
         if self.normalize:
           	# 将编码归一化，y_embed[:, -1:, :] -> shape [B, 1, W]
-            # 保留了 y 方向上最大的编码数，防止处以 0 加上了 eps
+            # 保留了 y 方向上最大的编码数，防止除以 0 加上了 eps
             # 然后乘上了scale，默认是 2pi，所以最终结果为 0-2pi 之间
             # 列表 l[-1] 和 l[-1:] 是不一样的，前者返回一个值，后者返回只有一个值的列表
             y_embed = y_embed / (y_embed[:, -1:, :] + self.eps) * self.scale
@@ -446,7 +446,11 @@ class SinePositionalEncoding(nn.Module):
         return pos
 ```
 
-
+> 一些比较好理解的 Positional Encoding 的博客
+>
+> https://zhuanlan.zhihu.com/p/166244505
+>
+> https://blog.csdn.net/weixin_42715977/article/details/122135262
 
 ## FFN
 

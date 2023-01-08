@@ -24,6 +24,10 @@ tags:
 
 
 
+> 更新一下：附上一个我认为将 ROI align 以及对应的双线性插值讲的不错的博客
+>
+> https://zhuanlan.zhihu.com/p/73113289
+
 ## 整体流程
 
 

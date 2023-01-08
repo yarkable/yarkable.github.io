@@ -18,31 +18,19 @@ tags:
 
 ## preface 
 
-
-
 本文记录 mmdetection 对 DETR 训练的流程，包括标签获取，transformer encoder&decoder，前向训练，以及各步骤中 tensor 的形状，仅供复习用处。mmdetection 版本为 2.11.0。
-
-
 
 ## DETR
 
-
-
-先从整个模型的 detector 看起，DETR 直接继承了 `SingleStageDetector`，所以改变的就是检测头，重点都在 TransformerHead 里面，我们直接从 forward_train 开始看
-
-
+先从整个模型的 detector 看起，DETR 直接继承了 *`SingleStageDetector`*，所以改变的就是检测头，重点都在 TransformerHead 里面，我们直接从 forward_train 开始看
 
 ## TransformerHead
 
-
-
 ### forward_train
-
-
 
 跟其他的检测头差不多，先是调用自己，也就是自身的 forward 函数，得到输出的 class label 和 reg coordinate，再调用自身的 loss 函数，不过这里是重载了一下，将 img_meta 传输进了 forward 函数的参数。
 
-```python
+```Python
 # over-write because img_metas are needed as inputs for bbox_head.
 def forward_train(self,
                     x,
@@ -67,13 +55,9 @@ def forward_train(self,
     return losses
 ```
 
-
-
 ### forward&forward_single
 
-
-
-```python
+```Python
 def forward(self, feats, img_metas):
     """Forward function.
 
@@ -102,7 +86,7 @@ def forward(self, feats, img_metas):
 
 直接看 forward_single，里面是 head 前向的逻辑。
 
-```python
+```Python
 def forward_single(self, x, img_metas):
     """"Forward function for a single feature level.
 
@@ -135,7 +119,7 @@ def forward_single(self, x, img_metas):
 
     # 将每一层的特征图先投影到指定的特征维度
     # self.input_proj = Conv2d(self.in_channels, self.embed_dims, kernel_size=1)
-    x = self.input_proj(x)	# shape：（B，embed_dims，H，W）
+    x = self.input_proj(x)  # shape：（B，embed_dims，H，W）
     # interpolate masks to have the same spatial shape with x
     # masks: [B, H, W]
     masks = F.interpolate(
@@ -144,9 +128,10 @@ def forward_single(self, x, img_metas):
     # 得到位置编码 shape：[B, 256, H, W]
     pos_embed = self.positional_encoding(masks)  # [bs, embed_dim, h, w]
     # outs_dec: [nb_dec, bs, num_query, embed_dim]
+    # self.query_embedding = nn.Embedding(self.num_query, self.embed_dims)
     outs_dec, _ = self.transformer(x, masks, self.query_embedding.weight,
                                     pos_embed)
-		# 对 query 进行分类和回归
+        # 对 query 进行分类和回归
     # shape [num_decoder, B, num_query, num_class+1]
     all_cls_scores = self.fc_cls(outs_dec)
     # 经过 ffn 再经过一个卷积得到 4 个输出的值，经过 sigmoid 归一化到 0-1，输出的是 xyhw
@@ -158,11 +143,9 @@ def forward_single(self, x, img_metas):
 
 ### loss
 
+来这里看看 DETR 怎么计算 loss 的          
 
-
-来这里看看 DETR 怎么计算 loss 的			
-
-```python
+```Python
 @force_fp32(apply_to=('all_cls_scores_list', 'all_bbox_preds_list'))
 def loss(self,
             all_cls_scores_list,
@@ -202,7 +185,7 @@ def loss(self,
     all_bbox_preds = all_bbox_preds_list[-1]
     assert gt_bboxes_ignore is None, \
         'Only supports for gt_bboxes_ignore setting to None.'
-		
+        
     # decoder 的层数，默认是 6
     num_dec_layers = len(all_cls_scores)
     all_gt_bboxes_list = [gt_bboxes_list for _ in range(num_dec_layers)]
@@ -211,7 +194,7 @@ def loss(self,
         gt_bboxes_ignore for _ in range(num_dec_layers)
     ]
     img_metas_list = [img_metas for _ in range(num_dec_layers)]
-		
+        
     # 调用 loss_single 函数
     losses_cls, losses_bbox, losses_iou = multi_apply(
         self.loss_single, all_cls_scores, all_bbox_preds,
@@ -236,15 +219,11 @@ def loss(self,
     return loss_dict
 ```
 
-
-
 ### loss_single
-
-
 
 主要的 loss 逻辑在这里
 
-```python
+```Python
 def loss_single(self,
                 cls_scores,
                 bbox_preds,
@@ -324,24 +303,811 @@ def loss_single(self,
     loss_bbox = self.loss_bbox(
         bbox_preds, bbox_targets, bbox_weights, avg_factor=num_total_pos)
     return loss_cls, loss_bbox, loss_iou
-
 ```
 
+## Transformer
+
+前面在 TransformerHead 中，特征图通过调用`self.transformer` 经过了 transformer 编解码得到了输出，这里就来分析一下 transformer 里面的一些组件。
+
+```Bash
+transformer=dict(
+    type='Transformer',
+    embed_dims=256,
+    num_heads=8,
+    num_encoder_layers=6,
+    num_decoder_layers=6,
+    feedforward_channels=2048,
+    dropout=0.1,
+    act_cfg=dict(type='ReLU', inplace=True),
+    norm_cfg=dict(type='LN'),
+    num_fcs=2,
+    pre_norm=False,
+    return_intermediate_dec=True),
+```
+
+Transformer 类的主要代码如下
+
+```Python
+class Transformer(nn.Module):
+    """Implements the DETR transformer.
+
+    Following the official DETR implementation, this module copy-paste
+    from torch.nn.Transformer with modifications:
+
+        * positional encodings are passed in MultiheadAttention
+        * extra LN at the end of encoder is removed
+        * decoder returns a stack of activations from all decoding layers
+
+    See `paper: End-to-End Object Detection with Transformers
+    <https://arxiv.org/pdf/2005.12872>`_ for details.
+
+    Args:
+        embed_dims (int): The feature dimension.
+        num_heads (int): Parallel attention heads. Same as
+            `nn.MultiheadAttention`.
+        num_encoder_layers (int): Number of `TransformerEncoderLayer`.
+        num_decoder_layers (int): Number of `TransformerDecoderLayer`.
+        feedforward_channels (int): The hidden dimension for FFNs used in both
+            encoder and decoder.
+        dropout (float): Probability of an element to be zeroed. Default 0.0.
+        act_cfg (dict): Activation config for FFNs used in both encoder
+            and decoder. Default ReLU.
+        norm_cfg (dict): Config dict for normalization used in both encoder
+            and decoder. Default layer normalization.
+        num_fcs (int): The number of fully-connected layers in FFNs, which is
+            used for both encoder and decoder.
+        pre_norm (bool): Whether the normalization layer is ordered
+            first in the encoder and decoder. Default False.
+        return_intermediate_dec (bool): Whether to return the intermediate
+            output from each TransformerDecoderLayer or only the last
+            TransformerDecoderLayer. Default False. If False, the returned
+            `hs` has shape [num_decoder_layers, bs, num_query, embed_dims].
+            If True, the returned `hs` will have shape [1, bs, num_query,
+            embed_dims].
+    """
+
+    def __init__(self,
+                 embed_dims=512,
+                 num_heads=8,
+                 num_encoder_layers=6,
+                 num_decoder_layers=6,
+                 feedforward_channels=2048,
+                 dropout=0.0,
+                 act_cfg=dict(type='ReLU', inplace=True),
+                 norm_cfg=dict(type='LN'),
+                 num_fcs=2,
+                 pre_norm=False,
+                 return_intermediate_dec=False):
+        super(Transformer, self).__init__()
+        self.embed_dims = embed_dims
+        self.num_heads = num_heads
+        self.num_encoder_layers = num_encoder_layers
+        self.num_decoder_layers = num_decoder_layers
+        self.feedforward_channels = feedforward_channels
+        self.dropout = dropout
+        self.act_cfg = act_cfg
+        self.norm_cfg = norm_cfg
+        self.num_fcs = num_fcs
+        self.pre_norm = pre_norm
+        self.return_intermediate_dec = return_intermediate_dec
+        # 进行 operation 的顺序
+        if self.pre_norm:
+            encoder_order = ('norm', 'selfattn', 'norm', 'ffn')
+            decoder_order = ('norm', 'selfattn', 'norm', 'multiheadattn',
+                             'norm', 'ffn')
+        else:
+            encoder_order = ('selfattn', 'norm', 'ffn', 'norm')
+            decoder_order = ('selfattn', 'norm', 'multiheadattn', 'norm',
+                             'ffn', 'norm')
+        # 编码器与解码器
+        self.encoder = TransformerEncoder(num_encoder_layers, embed_dims,
+                                          num_heads, feedforward_channels,
+                                          dropout, encoder_order, act_cfg,
+                                          norm_cfg, num_fcs)
+        self.decoder = TransformerDecoder(num_decoder_layers, embed_dims,
+                                          num_heads, feedforward_channels,
+                                          dropout, decoder_order, act_cfg,
+                                          norm_cfg, num_fcs,
+                                          return_intermediate_dec)
+
+    def init_weights(self, distribution='uniform'):
+        """Initialize the transformer weights."""
+        # follow the official DETR to init parameters
+        for m in self.modules():
+            if hasattr(m, 'weight') and m.weight.dim() > 1:
+                xavier_init(m, distribution=distribution)
+
+    def forward(self, x, mask, query_embed, pos_embed):
+        """Forward function for `Transformer`.
+
+        Args:
+            x (Tensor): Input query with shape [bs, c, h, w] where
+                c = embed_dims.
+            mask (Tensor): The key_padding_mask used for encoder and decoder,
+                with shape [bs, h, w].
+            query_embed (Tensor): The query embedding for decoder, with shape
+                [num_query, c].
+            pos_embed (Tensor): The positional encoding for encoder and
+                decoder, with the same shape as `x`.
+
+        Returns:
+            tuple[Tensor]: results of decoder containing the following tensor.
+
+                - out_dec: Output from decoder. If return_intermediate_dec \
+                      is True output has shape [num_dec_layers, bs,
+                      num_query, embed_dims], else has shape [1, bs, \
+                      num_query, embed_dims].
+                - memory: Output results from encoder, with shape \
+                      [bs, embed_dims, h, w].
+        """
+        bs, c, h, w = x.shape
+        x = x.flatten(2).permute(2, 0, 1)  # [bs, c, h, w] -> [h*w, bs, c]
+        pos_embed = pos_embed.flatten(2).permute(2, 0, 1) # 同上
+        query_embed = query_embed.unsqueeze(1).repeat(
+            1, bs, 1)  # [num_query, dim] -> [num_query, bs, dim]
+        # mask 为 0 的地方表示有像素存在（非 padding）
+        mask = mask.flatten(1)  # [bs, h, w] -> [bs, h*w]
+        # 得到经过 encode 的中间特征: [h*w, bs, c]，和 x 是一样的 shape，也就是说 encoder 并不改变 shape
+        memory = self.encoder(
+            x, pos=pos_embed, attn_mask=None, key_padding_mask=mask)
+        # target 相当于将 quey_embed 置初始值 0 传入 decoder 进行查询
+        target = torch.zeros_like(query_embed)
+        # out_dec: [num_layers, num_query, bs, dim]
+        out_dec = self.decoder(
+            target,
+            memory,
+            memory_pos=pos_embed,
+            query_pos=query_embed,
+            memory_attn_mask=None,
+            target_attn_mask=None,
+            memory_key_padding_mask=mask,
+            target_key_padding_mask=None)
+        # [num_layers, num_query, bs, dim] -> [num_layers, bs, num_query, dim]
+        out_dec = out_dec.transpose(1, 2)
+        # [h*w, bs, dim] -> [bs, dim, h*w] -> [bs, dim, h, w]
+        memory = memory.permute(1, 2, 0).reshape(bs, c, h, w)
+        return out_dec, memory
+```
+
+### TransformerEncoder 
+
+```Python
+class TransformerEncoder(nn.Module):
+    """Implements the encoder in DETR transformer.
+
+    Args:
+        num_layers (int): The number of `TransformerEncoderLayer`.
+        embed_dims (int): Same as `TransformerEncoderLayer`.
+        num_heads (int): Same as `TransformerEncoderLayer`.
+        feedforward_channels (int): Same as `TransformerEncoderLayer`.
+        dropout (float): Same as `TransformerEncoderLayer`. Default 0.0.
+        order (tuple[str]): Same as `TransformerEncoderLayer`.
+        act_cfg (dict): Same as `TransformerEncoderLayer`. Default ReLU.
+        norm_cfg (dict): Same as `TransformerEncoderLayer`. Default
+            layer normalization.
+        num_fcs (int): Same as `TransformerEncoderLayer`. Default 2.
+    """
+
+    def __init__(self,
+                 num_layers,
+                 embed_dims,
+                 num_heads,
+                 feedforward_channels,
+                 dropout=0.0,
+                 order=('selfattn', 'norm', 'ffn', 'norm'),
+                 act_cfg=dict(type='ReLU', inplace=True),
+                 norm_cfg=dict(type='LN'),
+                 num_fcs=2):
+        super(TransformerEncoder, self).__init__()
+        assert isinstance(order, tuple) and len(order) == 4
+        assert set(order) == set(['selfattn', 'norm', 'ffn'])
+        self.num_layers = num_layers
+        self.embed_dims = embed_dims
+        self.num_heads = num_heads
+        self.feedforward_channels = feedforward_channels
+        self.dropout = dropout
+        self.order = order
+        self.act_cfg = act_cfg
+        self.norm_cfg = norm_cfg
+        self.num_fcs = num_fcs
+        self.pre_norm = order[0] == 'norm'
+        self.layers = nn.ModuleList()
+        # 一共要经过 num_layers 层 transformer encoder 进行编码
+        for _ in range(num_layers):
+            self.layers.append(
+                TransformerEncoderLayer(embed_dims, num_heads,
+                                        feedforward_channels, dropout, order,
+                                        act_cfg, norm_cfg, num_fcs))
+        self.norm = build_norm_layer(norm_cfg,
+                                     embed_dims)[1] if self.pre_norm else None
+
+    def forward(self, x, pos=None, attn_mask=None, key_padding_mask=None):
+        """Forward function for `TransformerEncoder`.
+
+        Args:
+            x (Tensor): Input query. Same in `TransformerEncoderLayer.forward`.
+            pos (Tensor): Positional encoding for query. Default None.
+                Same in `TransformerEncoderLayer.forward`.
+            attn_mask (Tensor): ByteTensor attention mask. Default None.
+                Same in `TransformerEncoderLayer.forward`.
+            key_padding_mask (Tensor): Same in
+                `TransformerEncoderLayer.forward`. Default None.
+
+        Returns:
+            Tensor: Results with shape [num_key, bs, embed_dims].
+        """
+        # 不断地经过 encoder 进行编码
+        for layer in self.layers:
+            x = layer(x, pos, attn_mask, key_padding_mask)
+        if self.norm is not None:
+            x = self.norm(x)
+        return x
+```
+
+### TransformerEncoderLayer
+
+```Python
+class TransformerEncoderLayer(nn.Module):
+    """Implements one encoder layer in DETR transformer.
+
+    Args:
+        embed_dims (int): The feature dimension. Same as `FFN`.
+        num_heads (int): Parallel attention heads.
+        feedforward_channels (int): The hidden dimension for FFNs.
+        dropout (float): Probability of an element to be zeroed. Default 0.0.
+        order (tuple[str]): The order for encoder layer. Valid examples are
+            ('selfattn', 'norm', 'ffn', 'norm') and ('norm', 'selfattn',
+            'norm', 'ffn'). Default ('selfattn', 'norm', 'ffn', 'norm').
+        act_cfg (dict): The activation config for FFNs. Default ReLU.
+        norm_cfg (dict): Config dict for normalization layer. Default
+            layer normalization.
+        num_fcs (int): The number of fully-connected layers for FFNs.
+            Default 2.
+    """
+
+    def __init__(self,
+                 embed_dims,
+                 num_heads,
+                 feedforward_channels,
+                 dropout=0.0,
+                 order=('selfattn', 'norm', 'ffn', 'norm'),
+                 act_cfg=dict(type='ReLU', inplace=True),
+                 norm_cfg=dict(type='LN'),
+                 num_fcs=2):
+        super(TransformerEncoderLayer, self).__init__()
+        assert isinstance(order, tuple) and len(order) == 4
+        assert set(order) == set(['selfattn', 'norm', 'ffn'])
+        self.embed_dims = embed_dims
+        self.num_heads = num_heads
+        self.feedforward_channels = feedforward_channels
+        self.dropout = dropout
+        self.order = order
+        self.act_cfg = act_cfg
+        self.norm_cfg = norm_cfg
+        self.num_fcs = num_fcs
+        self.pre_norm = order[0] == 'norm'
+        self.self_attn = MultiheadAttention(embed_dims, num_heads, dropout)
+        self.ffn = FFN(embed_dims, feedforward_channels, num_fcs, act_cfg,
+                       dropout)
+        self.norms = nn.ModuleList()
+        self.norms.append(build_norm_layer(norm_cfg, embed_dims)[1])
+        self.norms.append(build_norm_layer(norm_cfg, embed_dims)[1])
+
+    def forward(self, x, pos=None, attn_mask=None, key_padding_mask=None):
+        """Forward function for `TransformerEncoderLayer`.
+
+        Args:
+            x (Tensor): The input query with shape [num_key, bs,
+                embed_dims]. Same in `MultiheadAttention.forward`.
+            pos (Tensor): The positional encoding for query. Default None.
+                Same as `query_pos` in `MultiheadAttention.forward`.
+            attn_mask (Tensor): ByteTensor mask with shape [num_key,
+                num_key]. Same in `MultiheadAttention.forward`. Default None.
+            key_padding_mask (Tensor): ByteTensor with shape [bs, num_key].
+                Same in `MultiheadAttention.forward`. Default None.
+
+        Returns:
+            Tensor: forwarded results with shape [num_key, bs, embed_dims].
+        """
+        norm_cnt = 0
+        inp_residual = x
+        for layer in self.order:
+            # encoder 中的 self_att 是把输入同时作为 kqv
+            if layer == 'selfattn':
+                # self attention
+                query = key = value = x
+                x = self.self_attn(
+                    query,
+                    key,
+                    value,
+                    inp_residual if self.pre_norm else None,
+                    query_pos=pos,
+                    key_pos=pos,
+                    attn_mask=attn_mask,
+                    key_padding_mask=key_padding_mask)
+                inp_residual = x
+            elif layer == 'norm':
+                x = self.norms[norm_cnt](x)
+                norm_cnt += 1
+            elif layer == 'ffn':
+                x = self.ffn(x, inp_residual if self.pre_norm else None)
+        return x
+```
+
+### MultiheadAttention
+
+Transformer 里面主要就是这个多头注意力在起作用，代码如下，其实主要就还是调用 `nn.MultiheadAttention`，做了一些位置编码的判断
+$$
+\text{MultiHead}(Q, K, V) = \text{Concat}(head_1,\dots,head_h)W^O         \text{where}  head_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V) 
+$$
 
 
+```Python
+class MultiheadAttention(nn.Module):
+    """A warpper for torch.nn.MultiheadAttention.
 
+    This module implements MultiheadAttention with residual connection,
+    and positional encoding used in DETR is also passed as input.
 
+    Args:
+        embed_dims (int): The embedding dimension.
+        num_heads (int): Parallel attention heads. Same as
+            `nn.MultiheadAttention`.
+        dropout (float): A Dropout layer on attn_output_weights. Default 0.0.
+    """
 
+    def __init__(self, embed_dims, num_heads, dropout=0.0):
+        super(MultiheadAttention, self).__init__()
+        assert embed_dims % num_heads == 0, 'embed_dims must be ' \
+            f'divisible by num_heads. got {embed_dims} and {num_heads}.'
+        self.embed_dims = embed_dims
+        self.num_heads = num_heads
+        self.dropout = dropout
+        self.attn = nn.MultiheadAttention(embed_dims, num_heads, dropout)
+        self.dropout = nn.Dropout(dropout)
 
+    def forward(self,
+                x,
+                key=None,
+                value=None,
+                residual=None,
+                query_pos=None,
+                key_pos=None,
+                attn_mask=None,
+                key_padding_mask=None):
+        """Forward function for `MultiheadAttention`.
 
+        Args:
+            x (Tensor): The input query with shape [num_query, bs,
+                embed_dims]. Same in `nn.MultiheadAttention.forward`.
+            key (Tensor): The key tensor with shape [num_key, bs,
+                embed_dims]. Same in `nn.MultiheadAttention.forward`.
+                Default None. If None, the `query` will be used.
+            value (Tensor): The value tensor with same shape as `key`.
+                Same in `nn.MultiheadAttention.forward`. Default None.
+                If None, the `key` will be used.
+            residual (Tensor): The tensor used for addition, with the
+                same shape as `x`. Default None. If None, `x` will be used.
+            query_pos (Tensor): The positional encoding for query, with
+                the same shape as `x`. Default None. If not None, it will
+                be added to `x` before forward function.
+            key_pos (Tensor): The positional encoding for `key`, with the
+                same shape as `key`. Default None. If not None, it will
+                be added to `key` before forward function. If None, and
+                `query_pos` has the same shape as `key`, then `query_pos`
+                will be used for `key_pos`.
+            attn_mask (Tensor): ByteTensor mask with shape [num_query,
+                num_key]. Same in `nn.MultiheadAttention.forward`.
+                Default None.
+            key_padding_mask (Tensor): ByteTensor with shape [bs, num_key].
+                Same in `nn.MultiheadAttention.forward`. Default None.
+
+        Returns:
+            Tensor: forwarded results with shape [num_query, bs, embed_dims].
+        """
+        query = x
+        if key is None:
+            key = query
+        if value is None:
+            value = key
+        if residual is None:
+            residual = x
+        if key_pos is None:
+            if query_pos is not None and key is not None:
+                if query_pos.shape == key.shape:
+                    key_pos = query_pos
+        if query_pos is not None:
+            query = query + query_pos
+        if key_pos is not None:
+            key = key + key_pos
+        out = self.attn(
+            query,
+            key,
+            value=value,
+            attn_mask=attn_mask,
+            key_padding_mask=key_padding_mask)[0]
+
+        return residual + self.dropout(out)
+```
+
+这边贴一个民间版 PyTorch 的实现，来方便理解 MultiheadAttention 在干啥。其实主要就是用三个线性层将 qkv 给映射到指定维度，然后 reshape 一下让维度里面有 head 这一个 dim，以此进行并行的 scaled dot-product attention 计算。然后最后将结果给 concat 起来
+
+```Python
+import torch
+import torch.nn as nn
+import numpy as np
+import torch.nn.functional as F
+
+class MultiHeadAttention(nn.Module):
+    '''
+    input:
+        query --- [N, T_q, query_dim]
+        key --- [N, T_k, key_dim]
+        mask --- [N, T_k]
+        T_q 相当于是图像中的 H*W
+    output:
+        out --- [N, T_q, embed_dim]
+        scores -- [h, N, T_q, T_k]
+    '''
+
+    def __init__(self, query_dim, key_dim, embed_dim, num_heads):
+
+        super().__init__()
+        self.embed_dim = embed_dim
+        self.num_heads = num_heads
+        self.key_dim = key_dim
+
+        self.W_query = nn.Linear(in_features=query_dim, out_features=embed_dim, bias=False)
+        self.W_key = nn.Linear(in_features=key_dim, out_features=embed_dim, bias=False)
+        self.W_value = nn.Linear(in_features=key_dim, out_features=embed_dim, bias=False)
+
+    def forward(self, query, key, mask=None):
+        querys = self.W_query(query)  # [N, T_q, embed_dim]
+        keys = self.W_key(key)  # [N, T_k, embed_dim]
+        values = self.W_value(key)
+
+        assert self.embed_dim % self.num_heads == 0
+        split_size = self.embed_dim // self.num_heads
+        querys = torch.stack(torch.split(querys, split_size, dim=2), dim=0)  # [h, N, T_q, embed_dim/h]
+        keys = torch.stack(torch.split(keys, split_size, dim=2), dim=0)  # [h, N, T_k, embed_dim/h]
+        values = torch.stack(torch.split(values, split_size, dim=2), dim=0)  # [h, N, T_k, embed_dim/h]
+
+        ## score = softmax(QK^T / (d_k ** 0.5))
+        scores = torch.matmul(querys, keys.transpose(2, 3))  # [h, N, T_q, T_k]
+        scores = scores / (self.key_dim ** 0.5)
+
+        ## mask
+        if mask is not None:
+            ## mask:  [N, T_k] --> [h, N, T_q, T_k]
+            mask = mask.unsqueeze(1).unsqueeze(0).repeat(self.num_heads,1,querys.shape[2],1)
+            # 将 mask 中为 1 的元素所在的索引在 score 中替换成 -np.inf，经过 softmax 之后这部分的值会变成 0
+            # 相当于这部分就不进行 attention 的计算 （ np.exp(-np.inf) = 0 ）
+            scores = scores.masked_fill(mask, -np.inf)
+        scores = F.softmax(scores, dim=3)
+
+        ## out = score * V
+        out = torch.matmul(scores, values)  # [h, N, T_q, embed_dim/h]
+        out = torch.cat(torch.split(out, 1, dim=0), dim=3).squeeze(0)  # [N, T_q, embed_dim]
+
+        return out,scores
+
+attention = MultiHeadAttention(256,512,256,16)
+
+## 输入
+qurry = torch.randn(8, 2, 256)
+key = torch.randn(8, 6 ,512)
+mask = torch.tensor([[False, False, False, False, True, True],
+                     [False, False, False, True, True, True],
+                     [False, False, False, False, True, True],
+                     [False, False, False, True, True, True],
+                     [False, False, False, False, True, True],
+                     [False, False, False, True, True, True],
+                     [False, False, False, False, True, True],
+                     [False, False, False, True, True, True],])
+
+## 输出
+out, scores = attention(qurry, key, mask)
+print('out:', out.shape)         ## torch.Size([8, 2, 256])
+print('scores:', scores.shape)   ## torch.Size([16, 8, 2, 6])
+```
+
+### FFN
+
+这个没啥说的，就是一个前馈的 MLP，将特征进行全连接输出
+
+```Python
+class FFN(nn.Module):
+    """Implements feed-forward networks (FFNs) with residual connection.
+
+    Args:
+        embed_dims (int): The feature dimension. Same as
+            `MultiheadAttention`.
+        feedforward_channels (int): The hidden dimension of FFNs.
+        num_fcs (int, optional): The number of fully-connected layers in
+            FFNs. Defaults to 2.
+        act_cfg (dict, optional): The activation config for FFNs.
+        dropout (float, optional): Probability of an element to be
+            zeroed. Default 0.0.
+        add_residual (bool, optional): Add resudual connection.
+            Defaults to True.
+    """
+
+    def __init__(self,
+                 embed_dims,
+                 feedforward_channels,
+                 num_fcs=2,
+                 act_cfg=dict(type='ReLU', inplace=True),
+                 dropout=0.0,
+                 add_residual=True):
+        super(FFN, self).__init__()
+        assert num_fcs >= 2, 'num_fcs should be no less ' \
+            f'than 2. got {num_fcs}.'
+        self.embed_dims = embed_dims
+        self.feedforward_channels = feedforward_channels
+        self.num_fcs = num_fcs
+        self.act_cfg = act_cfg
+        self.dropout = dropout
+        self.activate = build_activation_layer(act_cfg)
+
+        layers = nn.ModuleList()
+        in_channels = embed_dims
+        for _ in range(num_fcs - 1):
+            layers.append(
+                nn.Sequential(
+                    Linear(in_channels, feedforward_channels), self.activate,
+                    nn.Dropout(dropout)))
+            in_channels = feedforward_channels
+        layers.append(Linear(feedforward_channels, embed_dims))
+        self.layers = nn.Sequential(*layers)
+        self.dropout = nn.Dropout(dropout)
+        self.add_residual = add_residual
+
+    def forward(self, x, residual=None):
+        """Forward function for `FFN`."""
+        # out 和输入的 x 是相同的 shape
+        out = self.layers(x)
+        if not self.add_residual:
+            return out
+        if residual is None:
+            residual = x
+        return residual + self.dropout(out)
+```
+
+### TransformerDecoder
+
+Decoder 在进行解码的时候加入了 query 信息进去，个人觉得这里比 encoder 部分要更加重要
+
+```Python
+class TransformerDecoder(nn.Module):
+    """Implements the decoder in DETR transformer.
+
+    Args:
+        num_layers (int): The number of `TransformerDecoderLayer`.
+        embed_dims (int): Same as `TransformerDecoderLayer`.
+        num_heads (int): Same as `TransformerDecoderLayer`.
+        feedforward_channels (int): Same as `TransformerDecoderLayer`.
+        dropout (float): Same as `TransformerDecoderLayer`. Default 0.0.
+        order (tuple[str]): Same as `TransformerDecoderLayer`.
+        act_cfg (dict): Same as `TransformerDecoderLayer`. Default ReLU.
+        norm_cfg (dict): Same as `TransformerDecoderLayer`. Default
+            layer normalization.
+        num_fcs (int): Same as `TransformerDecoderLayer`. Default 2.
+    """
+
+    def __init__(self,
+                 num_layers,
+                 embed_dims,
+                 num_heads,
+                 feedforward_channels,
+                 dropout=0.0,
+                 # 顺序是已经固定的，在下面进行了一个 assert 断言
+                 order=('selfattn', 'norm', 'multiheadattn', 'norm', 'ffn',
+                        'norm'),
+                 act_cfg=dict(type='ReLU', inplace=True),
+                 norm_cfg=dict(type='LN'),
+                 num_fcs=2,
+                 return_intermediate=False):
+        super(TransformerDecoder, self).__init__()
+        assert isinstance(order, tuple) and len(order) == 6
+        assert set(order) == set(['selfattn', 'norm', 'multiheadattn', 'ffn'])
+        self.num_layers = num_layers
+        self.embed_dims = embed_dims
+        self.num_heads = num_heads
+        self.feedforward_channels = feedforward_channels
+        self.dropout = dropout
+        self.order = order
+        self.act_cfg = act_cfg
+        self.norm_cfg = norm_cfg
+        self.num_fcs = num_fcs
+        self.return_intermediate = return_intermediate
+        self.layers = nn.ModuleList()
+        # 同样也要经过好多层 decoder 一步一步解码
+        for _ in range(num_layers):
+            self.layers.append(
+                TransformerDecoderLayer(embed_dims, num_heads,
+                                        feedforward_channels, dropout, order,
+                                        act_cfg, norm_cfg, num_fcs))
+        self.norm = build_norm_layer(norm_cfg, embed_dims)[1]
+
+    def forward(self,
+                x,                 # 这里传入的是全 0 的，和 query_embed 形状一样的 tensor
+                memory,            # 这里传入的是经过 encoder 编码过的特征
+                memory_pos=None,   # 这里传入的是 encoder 中的 mask
+                query_pos=None,    # 这里传入的是 query_embed
+                memory_attn_mask=None,
+                target_attn_mask=None,
+                memory_key_padding_mask=None,
+                target_key_padding_mask=None):
+        """Forward function for `TransformerDecoder`.
+
+        Args:
+            x (Tensor): Input query. Same in `TransformerDecoderLayer.forward`.
+            memory (Tensor): Same in `TransformerDecoderLayer.forward`.
+            memory_pos (Tensor): Same in `TransformerDecoderLayer.forward`.
+                Default None.
+            query_pos (Tensor): Same in `TransformerDecoderLayer.forward`.
+                Default None.
+            memory_attn_mask (Tensor): Same in
+                `TransformerDecoderLayer.forward`. Default None.
+            target_attn_mask (Tensor): Same in
+                `TransformerDecoderLayer.forward`. Default None.
+            memory_key_padding_mask (Tensor): Same in
+                `TransformerDecoderLayer.forward`. Default None.
+            target_key_padding_mask (Tensor): Same in
+                `TransformerDecoderLayer.forward`. Default None.
+
+        Returns:
+            Tensor: Results with shape [num_query, bs, embed_dims].
+        """
+        intermediate = []
+        for layer in self.layers:
+            x = layer(x, memory, memory_pos, query_pos, memory_attn_mask,
+                      target_attn_mask, memory_key_padding_mask,
+                      target_key_padding_mask)
+            if self.return_intermediate:
+                intermediate.append(self.norm(x))
+        if self.norm is not None:
+            x = self.norm(x)
+            if self.return_intermediate:
+                intermediate.pop()
+                intermediate.append(x)
+        if self.return_intermediate:
+            return torch.stack(intermediate)
+        return x.unsqueeze(0)
+```
+
+### TransformerDecoderLayer
+
+```Python
+class TransformerDecoderLayer(nn.Module):
+    """Implements one decoder layer in DETR transformer.
+
+    Args:
+        embed_dims (int): The feature dimension. Same as
+            `TransformerEncoderLayer`.
+        num_heads (int): Parallel attention heads.
+        feedforward_channels (int): Same as `TransformerEncoderLayer`.
+        dropout (float): Same as `TransformerEncoderLayer`. Default 0.0.
+        order (tuple[str]): The order for decoder layer. Valid examples are
+            ('selfattn', 'norm', 'multiheadattn', 'norm', 'ffn', 'norm') and
+            ('norm', 'selfattn', 'norm', 'multiheadattn', 'norm', 'ffn').
+            Default the former.
+        act_cfg (dict): Same as `TransformerEncoderLayer`. Default ReLU.
+        norm_cfg (dict): Config dict for normalization layer. Default
+            layer normalization.
+        num_fcs (int): The number of fully-connected layers in FFNs.
+    """
+
+    def __init__(self,
+                 embed_dims,
+                 num_heads,
+                 feedforward_channels,
+                 dropout=0.0,
+                 order=('selfattn', 'norm', 'multiheadattn', 'norm', 'ffn',
+                        'norm'),
+                 act_cfg=dict(type='ReLU', inplace=True),
+                 norm_cfg=dict(type='LN'),
+                 num_fcs=2):
+        super(TransformerDecoderLayer, self).__init__()
+        assert isinstance(order, tuple) and len(order) == 6
+        assert set(order) == set(['selfattn', 'norm', 'multiheadattn', 'ffn'])
+        self.embed_dims = embed_dims
+        self.num_heads = num_heads
+        self.feedforward_channels = feedforward_channels
+        self.dropout = dropout
+        self.order = order
+        self.act_cfg = act_cfg
+        self.norm_cfg = norm_cfg
+        self.num_fcs = num_fcs
+        self.pre_norm = order[0] == 'norm'
+        self.self_attn = MultiheadAttention(embed_dims, num_heads, dropout)
+        self.multihead_attn = MultiheadAttention(embed_dims, num_heads,
+                                                 dropout)
+        self.ffn = FFN(embed_dims, feedforward_channels, num_fcs, act_cfg,
+                       dropout)
+        self.norms = nn.ModuleList()
+        # 3 norm layers in official DETR's TransformerDecoderLayer
+        for _ in range(3):
+            self.norms.append(build_norm_layer(norm_cfg, embed_dims)[1])
+
+    def forward(self,
+                x,
+                memory,
+                memory_pos=None,
+                query_pos=None,
+                memory_attn_mask=None,
+                target_attn_mask=None,
+                memory_key_padding_mask=None,
+                target_key_padding_mask=None):
+        """Forward function for `TransformerDecoderLayer`.
+
+        Args:
+            x (Tensor): Input query with shape [num_query, bs, embed_dims].
+            memory (Tensor): Tensor got from `TransformerEncoder`, with shape
+                [num_key, bs, embed_dims].
+            memory_pos (Tensor): The positional encoding for `memory`. Default
+                None. Same as `key_pos` in `MultiheadAttention.forward`.
+            query_pos (Tensor): The positional encoding for `query`. Default
+                None. Same as `query_pos` in `MultiheadAttention.forward`.
+            memory_attn_mask (Tensor): ByteTensor mask for `memory`, with
+                shape [num_key, num_key]. Same as `attn_mask` in
+                `MultiheadAttention.forward`. Default None.
+            target_attn_mask (Tensor): ByteTensor mask for `x`, with shape
+                [num_query, num_query]. Same as `attn_mask` in
+                `MultiheadAttention.forward`. Default None.
+            memory_key_padding_mask (Tensor): ByteTensor for `memory`, with
+                shape [bs, num_key]. Same as `key_padding_mask` in
+                `MultiheadAttention.forward`. Default None.
+            target_key_padding_mask (Tensor): ByteTensor for `x`, with shape
+                [bs, num_query]. Same as `key_padding_mask` in
+                `MultiheadAttention.forward`. Default None.
+
+        Returns:
+            Tensor: forwarded results with shape [num_query, bs, embed_dims].
+        """
+        norm_cnt = 0
+        inp_residual = x
+        # 对应的是DETR 论文附录的流程图，先是 self-att，再是 cross-att
+        for layer in self.order:
+            if layer == 'selfattn':
+                query = key = value = x
+                x = self.self_attn(
+                    query,
+                    key,
+                    value,
+                    inp_residual if self.pre_norm else None,
+                    query_pos,
+                    key_pos=query_pos,
+                    attn_mask=target_attn_mask,
+                    key_padding_mask=target_key_padding_mask)
+                inp_residual = x
+            elif layer == 'norm':
+                x = self.norms[norm_cnt](x)
+                norm_cnt += 1
+            # 这里虽然也是调用 MultiheadAttention，但是输入的 qkv 并不同，所以不是 self-att
+            elif layer == 'multiheadattn':
+                query = x
+                key = value = memory
+                x = self.multihead_attn(
+                    query,
+                    key,
+                    value,
+                    inp_residual if self.pre_norm else None,
+                    query_pos,
+                    key_pos=memory_pos,
+                    attn_mask=memory_attn_mask,
+                    key_padding_mask=memory_key_padding_mask)
+                inp_residual = x
+            elif layer == 'ffn':
+                x = self.ffn(x, inp_residual if self.pre_norm else None)
+        return x
+```
 
 ## SinePositionalEncoding
 
-
-
 这个类对特征图中有像素的地方生成位置编码，以减缓 transformer 丢失位置信息，在 config 中默认使用 sin 形式的位置编码，并且防止编码太大，normalize 到 0-1 之间
 
-```python
+```Python
 positional_encoding=dict(
   type='SinePositionalEncoding', num_feats=128, normalize=True),
 ```
@@ -350,7 +1116,7 @@ positional_encoding=dict(
 
 > 最后之所以要 concat x 和 y 方向上的 positional encoding 是因为单单 x 的 pe 不能使得每一个像素生成独一无二的 pe，要加上 y 方向的 pe 之后，每一个位置生成的才会是独特的 pe。（例如第一行和第二行的首元素生成的 x 方向的 pe 是一样的，但是他们在 y 方向的 pe 不一样）
 
-```python
+```Python
 @POSITIONAL_ENCODING.register_module()
 class SinePositionalEncoding(nn.Module):
     """Position encoding with sine and cosine functions.
@@ -418,7 +1184,7 @@ class SinePositionalEncoding(nn.Module):
         # (...)
         x_embed = not_mask.cumsum(2, dtype=torch.float32)
         if self.normalize:
-          	# 将编码归一化，y_embed[:, -1:, :] -> shape [B, 1, W]
+            # 将编码归一化，y_embed[:, -1:, :] -> shape [B, 1, W]
             # 保留了 y 方向上最大的编码数，防止除以 0 加上了 eps
             # 然后乘上了scale，默认是 2pi，所以最终结果为 0-2pi 之间
             # 列表 l[-1] 和 l[-1:] 是不一样的，前者返回一个值，后者返回只有一个值的列表
@@ -449,22 +1215,20 @@ class SinePositionalEncoding(nn.Module):
 ```
 
 > 一些比较好理解的 Positional Encoding 的博客
->
+
 > https://zhuanlan.zhihu.com/p/166244505
->
+
 > https://blog.csdn.net/weixin_42715977/article/details/122135262
 
 ## FFN
 
-
-
 在 TransformerHead 中解码出向量之后，经过 FFN 得到每一个 query 最终的预测结果, DETR 中 FFN 的实例化如下
 
-```python
+```Python
 self.reg_ffn = FFN(
-    self.embed_dims,	# 256, 和 FPN 通道一样
+    self.embed_dims,    # 256, 和 FPN 通道一样
     self.embed_dims,
-    self.num_fcs,	# 2
+    self.num_fcs,   # 2
     self.act_cfg, # ReLU
     dropout=0.0,
     add_residual=False)
@@ -472,7 +1236,7 @@ self.reg_ffn = FFN(
 
 FFN 代码如下，就是进行两层 FC，然后输出
 
-```python
+```Python
 class FFN(nn.Module):
     """Implements feed-forward networks (FFNs) with residual connection.
 
@@ -540,15 +1304,9 @@ class FFN(nn.Module):
         return repr_str
 ```
 
-
-
-
-
 ## HungarianAssigner
 
-
-
-```python
+```Python
 import torch
 
 from ..builder import BBOX_ASSIGNERS
@@ -706,18 +1464,13 @@ class HungarianAssigner(BaseAssigner):
         # 没有被匹配的 query 就被认为是背景
         return AssignResult(
             num_gts, assigned_gt_inds, None, labels=assigned_labels)
-
 ```
-
-
 
 ### demo
 
-
-
 假设下面 row 是 num_query，col 是 num_gt，那么我们要将每一个 gt 只匹配给一个 query，匹配原则是让他们的总 cost 最小，那么 2 1 2 是最优选择，坐标就是 [0,1] [1,0] [2,2]，row_ind=[0,1,2]，col_ind=[1,0,2]
 
-```python
+```Python
 cost = np.array([[4, 1, 3], 
                  [2, 0, 5], 
                  [3, 2, 2]])
@@ -729,25 +1482,15 @@ cost[row_ind, col_ind].sum()
 5
 ```
 
-
-
-
-
 ## CostFunction
 
-
-
-detr 做二分匹配时根据 cost function 的大小来为每一个 prediction 分配标签，主要用到了三个 cost function，都在 `mmdet/core/bbox/match_costs.py` 里面 ，下面介绍。
-
-
+detr 做二分匹配时根据 cost function 的大小来为每一个 prediction 分配标签，主要用到了三个 cost function，都在 *`mmdet/core/bbox/match_costs.py`* 里面 ，下面介绍。
 
 ### ClassificationCost
 
-
-
 见注释
 
-```python
+```Python
 MATCH_COST.register_module()
 class ClassificationCost(object):
     """ClsSoftmaxCost.
@@ -793,18 +1536,13 @@ class ClassificationCost(object):
         # 返回每一个 prediction 对每一个 gt_label 的 cost，越小代表得分越高
         cls_cost = -cls_score[:, gt_labels]
         return cls_cost * self.weight
-
 ```
-
-
 
 ### IoUCost
 
-
-
 见注释
 
-```python
+```Python
 @MATCH_COST.register_module()
 class IoUCost(object):
     """IoUCost.
@@ -847,18 +1585,13 @@ class IoUCost(object):
         # IoU 越大，cost 越小
         iou_cost = -overlaps
         return iou_cost * self.weight
-
 ```
-
-
 
 ### BBoxL1Cost
 
-
-
 见注释
 
-```python
+```Python
 @MATCH_COST.register_module()
 class BBoxL1Cost(object):
     """BBoxL1Cost.
@@ -906,16 +1639,10 @@ class BBoxL1Cost(object):
         return bbox_cost * self.weight
 ```
 
-
-
 ## reference
-
-
 
 https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linear_sum_assignment.html#scipy.optimize.linear_sum_assignment
 
 https://zhuanlan.zhihu.com/p/348060767
 
 https://zhuanlan.zhihu.com/p/345985277
-
-

@@ -11,7 +11,7 @@ github_repo: "https://github.com/yarkable/yarkable.github.io.git" # you code rep
 
 # Sidebar settings
 sidebar: true                           # whether or not using Sidebar.
-sidebar-about-description: "Life is short, so seize the day!"
+sidebar-about-description: "ByteDancer"
 sidebar-avatar: /img/self-introduce.jpg      # use absolute URL, seeing it's used in both `/` and `/about/`
 
 

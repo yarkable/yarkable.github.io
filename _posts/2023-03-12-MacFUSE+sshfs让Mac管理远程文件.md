@@ -10,6 +10,7 @@ tags:
     - ssh
     - linux
     - macOS
+    - tools
 
 ---
 

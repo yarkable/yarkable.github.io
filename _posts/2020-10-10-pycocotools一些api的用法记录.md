@@ -177,7 +177,7 @@ plt.show()
 
 
 
-这个 API 可以直接输出数据集对应的类别（调用的时候不加括号），相当于 json 文件中的 ['categories']
+这个 API 可以直接输出数据集对应的类别（调用的时候不加括号），相当于 json 文件中的 `'categories'` 关键字，也相当于 `loadCats(getCatIds())` 的输出结果
 
 ## 实际应用
 
@@ -237,6 +237,10 @@ def load_annotations(self, image_index):
 ```
 
 
+
+> 看到一个博客，跟我写的差不多，不过会稍微详细一些，还把 mask 处理之类的 API 也讲了
+>
+> https://hellozhaozheng.github.io/z_post/%E8%AE%A1%E7%AE%97%E6%9C%BA%E8%A7%86%E8%A7%89-%E6%95%B0%E6%8D%AE%E9%9B%86-COCO/
 
 ## reference
 

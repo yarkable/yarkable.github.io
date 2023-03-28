@@ -1054,8 +1054,8 @@ if classwise:  # Compute per-category AP
 
 对比一下，这是之前默认的表格，只显示出每一个类别的 mAP 的值。
 
-![img](https://edk6qm9zlp.feishu.cn/space/api/box/stream/download/asynccode/?code=ODkyOGYxZGMyYzBjN2IyMWRkZDA3YTY3MmExZjg5YThfeXFVRW1Fak5Fclc3UkNQTXZpWTAxQTRUZkhSV3VRcXJfVG9rZW46Ym94Y25Yb3RaU1d6c3FTMHpEN2t0ZG9UbFlmXzE2Nzk4MzAyNDU6MTY3OTgzMzg0NV9WNA)
+![img](https://user-images.githubusercontent.com/33142987/228175045-233bdf3e-4449-40b3-988e-456895edff6f.png)
 
 这是我修改之后的，每个类别的所有 AP 值都显示出来了。
 
-![img](https://edk6qm9zlp.feishu.cn/space/api/box/stream/download/asynccode/?code=Y2Y5ZDVmMjIzNTE4YjM4Yjg0OTFjODlkYWI2NTgzOGJfazhFOVliN2R3eHdNZzl0ZVE0QlFVQXl2eHdyN20yTlJfVG9rZW46Ym94Y242cGltdlhEbE9vaG54ZnlIQWU3R2VjXzE2Nzk4MzAyNDU6MTY3OTgzMzg0NV9WNA)
+![img](https://user-images.githubusercontent.com/33142987/228175111-b0676f02-30bc-4358-9ef7-fdcbcbd0adcf.png)

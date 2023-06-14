@@ -135,6 +135,10 @@ coco.loadAnns(ids=202758)
 
 
 
+> 19.3.2023 更新
+
+这个函数的用途就是，一张图中可能不止一个框/分割标注，我们可以先通过 `getAnnIds` 得到某张图片中所有的标注的 id，再把 id 传进来就可以得到对应的所有标注信息了。
+
 ## showAnns
 
 
@@ -166,6 +170,14 @@ plt.show()
 
 
 ![mask_bbox](https://i.loli.net/2020/10/11/pHq6IXQNvVB4G7z.png)
+
+
+
+## cats
+
+
+
+这个 API 可以直接输出数据集对应的类别（调用的时候不加括号），相当于 json 文件中的 `'categories'` 关键字，也相当于 `loadCats(getCatIds())` 的输出结果
 
 ## 实际应用
 
@@ -225,6 +237,10 @@ def load_annotations(self, image_index):
 ```
 
 
+
+> 看到一个博客，跟我写的差不多，不过会稍微详细一些，还把 mask 处理之类的 API 也讲了
+>
+> https://hellozhaozheng.github.io/z_post/%E8%AE%A1%E7%AE%97%E6%9C%BA%E8%A7%86%E8%A7%89-%E6%95%B0%E6%8D%AE%E9%9B%86-COCO/
 
 ## reference
 
